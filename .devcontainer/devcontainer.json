@@ -1,0 +1,18 @@
+{
+    "dockerComposeFile": "docker-compose.yml",
+    "service": "app",
+    "workspaceFolder": "/workspace",
+    "forwardPorts": [3000, 8000, 3306],
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "ms-python.black-formatter"
+            ]
+        },
+        "settings": {
+            "python.linting.enabled": true
+        }
+    }
+}

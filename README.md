@@ -25,11 +25,25 @@ https://dev.classmethod.jp/articles/scrum-backlog-github-projects/
 
 VSCodeのdevcontainerでメインコンテナとdbコンテナが起動する
 
+#### Frontendの環境構築
+
+```
+cd frontend
+npm install
+```
+
 #### Frontendサーバの起動
 
 ```
 cd frontend
 yarn start
+```
+
+#### Backendの環境構築
+
+```
+cd backend
+poetry install
 ```
 
 #### Backendサーバの起動

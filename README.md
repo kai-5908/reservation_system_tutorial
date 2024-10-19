@@ -21,22 +21,40 @@ https://dev.classmethod.jp/articles/scrum-backlog-github-projects/
 * Describe any prerequisites, libraries, OS version, etc., needed before installing program.
 * ex. Windows 10
 
-### Installing
+### 環境構築
 
-* How/where to download your program
-* Any modifications needed to be made to files/folders
+VSCodeのdevcontainerでメインコンテナとdbコンテナが起動する
 
-### Executing program
+#### Frontendの環境構築
 
-* How to run the program
-* Step-by-step bullets
 ```
-code blocks for commands
+cd frontend
+npm install
 ```
 
-## Help
+#### Frontendサーバの起動
 
-Any advise for common problems or issues.
 ```
-command to run if program contains helper info
+cd frontend
+yarn start
+```
+
+#### Backendの環境構築
+
+```
+cd backend
+poetry install
+```
+
+#### Backendサーバの起動
+
+```
+cd backend
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+#### DBサーバへのアクセス
+
+```
+mysql -u user -p -h db --port 3306
 ```

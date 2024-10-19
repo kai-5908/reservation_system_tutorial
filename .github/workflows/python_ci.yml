@@ -5,13 +5,14 @@ on:
     paths:
       - '**.py'
   workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: ./backend
   
 jobs:
   lint:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -20,7 +21,7 @@ jobs:
         run: pipx install poetry==1.8.4
       
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: poetry
@@ -28,14 +29,14 @@ jobs:
       - name: Install Dependencies
         run: poetry install --no-root
       
+      - name: print working dir
+        run: ls -al
+      
       - name: Lint
         run: make lint
   
   test:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -44,7 +45,7 @@ jobs:
         run: pipx install poetry==1.8.4
       
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: poetry
@@ -57,9 +58,6 @@ jobs:
   
   test-coverage:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -68,7 +66,7 @@ jobs:
         run: pipx install poetry==1.8.4
       
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: poetry
@@ -82,14 +80,11 @@ jobs:
       - name: Commit Test Coverage
         uses: MishaKav/pytest-coverage-comment@main
         with:
-          pytest-coverage-path: pytest-coverage.txt
-          junitxml-path: pytest.xml
+          pytest-coverage-path: backend/pytest-coverage.txt
+          junitxml-path: backend/pytest.xml
           report-only-changed-files: true
   bandit:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -111,7 +106,7 @@ jobs:
             "https://api.github.com/repos/${{ github.repository }}/issues/comments/${{ steps.find_comment.outputs.comment-id }}"
       
       - name: Exec bandit
-        uses: mdegis/bandit-action@1.1
+        uses: mdegis/bandit-action@v1.0
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           path: "./"

@@ -61,7 +61,7 @@ exclude = [
 ]
 
 [tool.mypy]
-python_versiob = "3.11"
+python_version = "3.11"
 strict = true
 ignore_missing_imports = true
 check_untyped_defs = true

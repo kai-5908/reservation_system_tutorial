@@ -30,7 +30,7 @@ jobs:
         run: poetry install --no-root
       
       - name: print working dir
-        run: pwd
+        run: ls -al
       
       - name: Lint
         run: make lint

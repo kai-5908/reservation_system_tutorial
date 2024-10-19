@@ -1,0 +1,21 @@
+name: Branch Check
+on: 
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  branch-check:
+    runs-on: ubuntu-latest
+    env:
+      IS_APPROPRIATE: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check the head branch is a feature branch
+        if: ${{ startsWith(github.head_ref, 'feature/')}}
+        run: echo "IS_APPROPRIATE=true" >> $GITHUB_ENV
+
+      - name: Fail due to an inappropriate head branch
+        if: env.IS_APPROPRIATE == "false"
+        run: exit 1

@@ -16,7 +16,7 @@ test:
 .PHONY: test-cov
 test-cov:
 	poetry run pytest tests \
-		--cov src \
+		--cov \
 		--cov-branch \
 		--junitxml pytest.xml \
 		--cov-report term-missing:skip-covered | tee pytest-coverage.txt

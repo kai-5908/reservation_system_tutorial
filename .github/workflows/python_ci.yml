@@ -111,7 +111,7 @@ jobs:
             "https://api.github.com/repos/${{ github.repository }}/issues/comments/${{ steps.find_comment.outputs.comment-id }}"
       
       - name: Exec bandit
-        uses: mdegis/bandit-action@1.1
+        uses: mdegis/bandit-action@1.0
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           path: "./"

@@ -17,5 +17,5 @@ jobs:
         run: echo "IS_APPROPRIATE=true" >> $GITHUB_ENV
 
       - name: Fail due to an inappropriate head branch
-        if: env.IS_APPROPRIATE == "false"
+        if: env.IS_APPROPRIATE == 'false'
         run: exit 1

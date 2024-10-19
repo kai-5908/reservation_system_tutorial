@@ -1,0 +1,120 @@
+name: Python CI
+
+on:
+  pull_request:
+    paths:
+      - '**.py'
+  workflow_dispatch:
+  
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Install poetry
+        run: pipx install poetry==1.8.4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: poetry
+        
+      - name: Install Dependencies
+        run: poetry install --no-root
+      
+      - name: Lint
+        run: make lint
+  
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Install poetry
+        run: pipx install poetry==1.8.4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: poetry
+        
+      - name: Install Dependencies
+        run: poetry install --no-root
+      
+      - name: Test
+        run: make test
+  
+  test-coverage:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Install poetry
+        run: pipx install poetry==1.8.4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: poetry
+        
+      - name: Install Dependencies
+        run: poetry install --no-root
+      
+      - name: Get Test Coverage
+        run: make test-cov
+      
+      - name: Commit Test Coverage
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          pytest-coverage-path: pytest-coverage.txt
+          junitxml-path: pytest.xml
+          report-only-changed-files: true
+  bandit:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Find existing comment
+        id: find_comment
+        uses: peter-evans/find-comment@v3
+        with:
+          issue-number: ${{ github.event.number }}
+          body-includes: "Bandit results:"
+        
+      - name: Delete existing comment
+        if: steps.find_comment.output.comment-id
+        run: |
+          curl \
+            -X DELETE \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/comments/${{ steps.find_comment.outputs.comment-id }}"
+      
+      - name: Exec bandit
+        uses: mdegis/bandit-action@1.1
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          path: "./"
+          level: low
+          confidence: low
+          exit_zero: true

@@ -80,8 +80,8 @@ jobs:
       - name: Commit Test Coverage
         uses: MishaKav/pytest-coverage-comment@main
         with:
-          pytest-coverage-path: pytest-coverage.txt
-          junitxml-path: pytest.xml
+          pytest-coverage-path: backend/pytest-coverage.txt
+          junitxml-path: backend/pytest.xml
           report-only-changed-files: true
   bandit:
     runs-on: ubuntu-latest

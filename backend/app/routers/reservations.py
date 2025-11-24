@@ -1,13 +1,10 @@
-from datetime import datetime
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, Path, status
-
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..deps import get_current_user_id, get_session
 from ..domain.errors import CapacityError, DuplicateReservationError, SlotNotOpenError
-from ..models import ReservationStatus
 from ..infrastructure.repositories import SqlAlchemyReservationRepository, SqlAlchemySlotRepository
 from ..schemas import ReservationCreate, ReservationRead
 from ..usecases import reservations as reservation_usecase
@@ -49,9 +46,7 @@ async def list_my_reservations(
 ) -> list[ReservationRead]:
     res_repo = SqlAlchemyReservationRepository(session)
     rows = await reservation_usecase.list_user_reservations(res_repo, user_id=user_id)
-    return [
-        ReservationRead.from_db(reservation=res, slot=slot, shop_id=slot.shop_id) for res, slot in rows
-    ]
+    return [ReservationRead.from_db(reservation=res, slot=slot, shop_id=slot.shop_id) for res, slot in rows]
 
 
 @router.get("/me/reservations/{reservation_id}", response_model=ReservationRead)

@@ -1,5 +1,4 @@
 import pytest
-
 from app.domain.errors import CapacityError, DuplicateReservationError, SlotNotOpenError
 from app.domain.services import SlotSnapshot, validate_reservation
 from app.models import SlotStatus

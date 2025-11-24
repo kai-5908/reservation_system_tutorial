@@ -1,6 +1,4 @@
 import pytest
-
-from app.domain.errors import SlotNotOpenError
 from app.models import ReservationStatus, Slot
 from app.usecases import reservations as uc
 

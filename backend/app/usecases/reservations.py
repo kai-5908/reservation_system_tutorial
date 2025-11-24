@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from ..domain.errors import CapacityError, DuplicateReservationError, SlotNotOpenError
+from ..domain.errors import SlotNotOpenError
 from ..domain.repositories import ReservationRepository, SlotRepository
 from ..domain.services import SlotSnapshot, validate_reservation
 from ..models import ReservationStatus, Slot

@@ -2,15 +2,13 @@ from datetime import datetime
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..deps import get_session
+from ..infrastructure.repositories import SqlAlchemySlotRepository
 from ..schemas import SlotAvailability
 from ..usecases import slots as slot_usecase
-from ..schemas import SlotAvailability
-from ..utils.time import JST, to_utc_naive, utc_naive_to_jst
-from ..infrastructure.repositories import SqlAlchemySlotRepository
+from ..utils.time import to_utc_naive, utc_naive_to_jst
 
 router = APIRouter(prefix="/shops", tags=["slots"])
 

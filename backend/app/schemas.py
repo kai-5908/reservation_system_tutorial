@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from .models import ReservationStatus, SlotStatus
+from .models import Reservation, ReservationStatus, Slot, SlotStatus
 from .utils.time import JST, utc_naive_to_jst
 
 
@@ -40,7 +40,13 @@ class ReservationRead(BaseModel):
     model_config = {"json_encoders": {datetime: lambda v: v.astimezone(JST).isoformat()}}
 
     @classmethod
-    def from_db(cls, *, reservation, slot, shop_id: Optional[int] = None) -> "ReservationRead":
+    def from_db(
+        cls,
+        *,
+        reservation: Reservation,
+        slot: Slot,
+        shop_id: Optional[int] = None,
+    ) -> "ReservationRead":
         return cls(
             reservation_id=reservation.id,
             slot_id=reservation.slot_id,

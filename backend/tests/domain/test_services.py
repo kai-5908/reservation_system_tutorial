@@ -48,7 +48,7 @@ def test_accepts_when_within_capacity_and_no_duplicate() -> None:
     assert remaining_after == 1
 
 
-def test_accepts_idempotent_cancel_path_is_handled_by_usecase_logic():
+def test_accepts_idempotent_cancel_path_is_handled_by_usecase_logic() -> None:
     # This test is a placeholder reminder: idempotent cancel is handled in usecase,
     # not in validate_reservation. Kept here to ensure we cover future additions.
     assert True

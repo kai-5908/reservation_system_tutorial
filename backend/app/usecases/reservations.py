@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from ..domain.errors import SlotNotOpenError
 from ..domain.repositories import ReservationRepository, SlotRepository
 from ..domain.services import SlotSnapshot, validate_reservation
-from ..models import ReservationStatus, Slot
+from ..models import Reservation, ReservationStatus, Slot
 
 
 async def create_reservation(
@@ -13,7 +13,7 @@ async def create_reservation(
     slot_id: int,
     user_id: int,
     party_size: int,
-) -> tuple[object, Slot]:
+) -> tuple[Reservation, Slot]:
     slot = await slot_repo.get_for_update(slot_id)
     if slot is None:
         raise SlotNotOpenError("slot not found")
@@ -43,7 +43,7 @@ async def cancel_reservation(
     *,
     reservation_id: int,
     user_id: int,
-) -> tuple[object, Slot, ReservationStatus]:
+) -> tuple[Reservation, Slot, ReservationStatus]:
     row = await res_repo.get_for_user(reservation_id, user_id)
     if row is None:
         raise SlotNotOpenError("reservation not found")
@@ -61,7 +61,7 @@ async def list_user_reservations(
     res_repo: ReservationRepository,
     *,
     user_id: int,
-) -> list[tuple]:
+) -> list[tuple[Reservation, Slot]]:
     return await res_repo.list_by_user(user_id)
 
 
@@ -70,5 +70,5 @@ async def get_user_reservation(
     *,
     reservation_id: int,
     user_id: int,
-) -> tuple | None:
+) -> tuple[Reservation, Slot] | None:
     return await res_repo.get_for_user(reservation_id, user_id)

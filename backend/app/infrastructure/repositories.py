@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any, List, Optional, Tuple, cast
 
 from sqlalchemy import Select, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,7 +16,8 @@ class SqlAlchemySlotRepository(SlotRepository):
         self.session = session
 
     async def get_for_update(self, slot_id: int) -> Slot | None:
-        return await self.session.scalar(select(Slot).where(Slot.id == slot_id).with_for_update())
+        result = await self.session.scalar(select(Slot).where(Slot.id == slot_id).with_for_update())
+        return result if isinstance(result, Slot) else None
 
     async def list_with_reserved(
         self,
@@ -23,8 +25,8 @@ class SqlAlchemySlotRepository(SlotRepository):
         start: datetime,
         end: datetime,
         seat_id: int | None,
-    ):
-        stmt: Select = (
+    ) -> List[Tuple[Slot, int]]:
+        stmt: Select[Tuple[Slot, Any]] = (
             select(
                 Slot,
                 func.coalesce(func.sum(Reservation.party_size), 0).label("reserved"),
@@ -43,7 +45,7 @@ class SqlAlchemySlotRepository(SlotRepository):
         if seat_id is not None:
             stmt = stmt.where(Slot.seat_id == seat_id)
         rows = await self.session.execute(stmt)
-        return rows.all()
+        return [(slot, int(reserved)) for slot, reserved in rows.all()]
 
 
 class SqlAlchemyReservationRepository(ReservationRepository):
@@ -86,24 +88,24 @@ class SqlAlchemyReservationRepository(ReservationRepository):
         await self.session.flush()
         return reservation
 
-    async def list_by_user(self, user_id: int):
-        stmt: Select = (
+    async def list_by_user(self, user_id: int) -> List[Tuple[Reservation, Slot]]:
+        stmt: Select[Tuple[Reservation, Slot]] = (
             select(Reservation, Slot)
             .join(Slot, Reservation.slot_id == Slot.id)
             .options(joinedload(Reservation.slot))
             .where(Reservation.user_id == user_id)
         )
         rows = await self.session.execute(stmt)
-        return rows.all()
+        return cast(List[Tuple[Reservation, Slot]], list(rows.all()))
 
-    async def get_for_user(self, reservation_id: int, user_id: int):
-        stmt = (
+    async def get_for_user(self, reservation_id: int, user_id: int) -> Optional[Tuple[Reservation, Slot]]:
+        stmt: Select[Tuple[Reservation, Slot]] = (
             select(Reservation, Slot)
             .join(Slot, Reservation.slot_id == Slot.id)
             .where(Reservation.id == reservation_id, Reservation.user_id == user_id)
         )
         row = (await self.session.execute(stmt)).first()
-        return row
+        return cast(Optional[Tuple[Reservation, Slot]], row)
 
     async def cancel(self, reservation: Reservation) -> Reservation:
         self.session.add(reservation)

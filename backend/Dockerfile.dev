@@ -1,0 +1,23 @@
+# syntax=docker/dockerfile:1
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    UV_PROJECT_ENVIRONMENT=/opt/venv \
+    VIRTUAL_ENV=/opt/venv \
+    PIP_NO_CACHE_DIR=1 \
+    PATH="/opt/venv/bin:/root/.local/bin:/usr/local/bin:${PATH}"
+
+WORKDIR /app/backend
+
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates && rm -rf /var/lib/apt/lists/*
+
+# Install uv (default path: /root/.local/bin)
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+
+COPY backend/requirements-dev.txt backend/requirements.txt ./
+
+RUN /root/.local/bin/uv venv /opt/venv && \
+    /root/.local/bin/uv pip install -r requirements-dev.txt
+
+CMD ["sleep", "infinity"]

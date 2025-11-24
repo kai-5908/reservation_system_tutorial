@@ -17,17 +17,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       
-      - name: Install poetry
-        run: pipx install poetry==1.8.4
-      
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: poetry
-        
+      
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      
       - name: Install Dependencies
-        run: poetry install --no-root
+        run: uv sync --locked --no-install-project
       
       - name: print working dir
         run: ls -al
@@ -41,17 +40,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       
-      - name: Install poetry
-        run: pipx install poetry==1.8.4
-      
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: poetry
         
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      
       - name: Install Dependencies
-        run: poetry install --no-root
+        run: uv sync --locked --no-install-project
       
       - name: Test
         run: make test
@@ -62,17 +60,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       
-      - name: Install poetry
-        run: pipx install poetry==1.8.4
-      
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: poetry
         
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      
       - name: Install Dependencies
-        run: poetry install --no-root
+        run: uv sync --locked --no-install-project
       
       - name: Get Test Coverage
         run: make test-cov
@@ -89,27 +86,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       
-      - name: Find existing comment
-        id: find_comment
-        uses: peter-evans/find-comment@v3
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          issue-number: ${{ github.event.number }}
-          body-includes: "Bandit results:"
-        
-      - name: Delete existing comment
-        if: steps.find_comment.output.comment-id
-        run: |
-          curl \
-            -X DELETE \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${{ github.repository }}/issues/comments/${{ steps.find_comment.outputs.comment-id }}"
+          python-version: '3.11'
+
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+
+      - name: Install Dependencies
+        run: uv sync --locked --no-install-project
       
       - name: Exec bandit
-        uses: mdegis/bandit-action@v1.0
-        with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          path: "./"
-          level: low
-          confidence: low
-          exit_zero: true
+        run: uv run bandit -r app -ll -x .venv

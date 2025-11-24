@@ -5,17 +5,53 @@ description = ""
 authors = ["kai-5908 <dolce.cantabile.maestoso@gmail.com>"]
 readme = "README.md"
 
+[[tool.poetry.packages]]
+include = "app"
+
+[project]
+name = "backend"
+version = "0.1.0"
+description = "Reservation system backend"
+requires-python = ">=3.11,<4.0"
+dependencies = [
+    "fastapi==0.115.2",
+    "pydantic==2.9.2",
+    "uvicorn==0.32.0",
+    "sqlalchemy==2.0.36",
+    "aiomysql==0.2.0",
+    "python-dotenv==1.0.1",
+    "pytest==8.3.3",
+    "pytest-asyncio==0.23.8",
+    "ruff>=0.14.6",
+    "mypy>=1.12.0",
+    "bandit>=1.9.2",
+]
+optional-dependencies = { dev = [
+    "pytest==8.3.3",
+    "pytest-cov==5.0.0",
+    "pytest-asyncio==0.23.8",
+    "black==24.10.0",
+    "mypy==1.12.0",
+    "isort==5.13.2",
+    "pyproject-flake8==7.0.0",
+] }
+
 [tool.poetry.dependencies]
 python = "^3.11"
-pytest = "^8.3.3"
-black = "^24.10.0"
-mypy = "^1.12.0"
-isort = "^5.13.2"
-fastapi = "^0.115.2"
-pydantic = "^2.9.2"
-uvicorn = "^0.32.0"
-pyproject-flake8 = "^7.0.0"
-pytest-cov = "^5.0.0"
+fastapi = "0.115.2"
+pydantic = "2.9.2"
+uvicorn = "0.32.0"
+sqlalchemy = "2.0.36"
+aiomysql = "0.2.0"
+python-dotenv = "1.0.1"
+pytest = "8.3.3"
+pytest-cov = "5.0.0"
+pytest-asyncio = "0.23.8"
+ruff = "0.14.6"
+black = "24.10.0"
+mypy = "1.12.0"
+isort = "5.13.2"
+pyproject-flake8 = "7.0.0"
 
 
 [build-system]
@@ -35,34 +71,27 @@ skip = [
     ".venv",
 ]
 
-[tool.black]
-line-length = 119
-target-version = ['py311']
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.eggs
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-)
-'''
-
-[tool.flake8]
-max-line-length = 119
-ignore = [
-    "E203", # Whitespace before ':'
-    "E266", # Too many leading '#' for block comment
-    "W503", # Line break before binary operator
-]
-exclude = [
-    ".venv"
-]
-
 [tool.mypy]
 python_version = "3.11"
 strict = true
 ignore_missing_imports = true
 check_untyped_defs = true
+
+[tool.ruff]
+line-length = 119
+target-version = "py311"
+src = ["app", "tests"]
+exclude = [".venv"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["E203"]
+[tool.pytest.ini_options]
+markers = [
+    "asyncio: mark async tests",
+]

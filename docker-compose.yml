@@ -1,0 +1,46 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: reservation_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: reservation
+      MYSQL_USER: app
+      MYSQL_PASSWORD: app_password
+      MYSQL_ROOT_PASSWORD: root_password
+      TZ: Asia/Tokyo
+    command: ["mysqld", "--default-time-zone=+00:00", "--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.dev
+    container_name: reservation_backend
+    working_dir: /app/backend
+    command: ["sleep", "infinity"]
+    environment:
+      DATABASE_URL: mysql+aiomysql://app:app_password@db:3306/reservation
+      ECHO_SQL: "0"
+      TZ: Asia/Tokyo
+      VIRTUAL_ENV: /opt/venv
+      UV_PROJECT_ENVIRONMENT: /opt/venv
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db_data:

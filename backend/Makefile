@@ -1,22 +1,21 @@
 .PHONY: lint
 lint:
-	poetry run isort . --check-only
-	poetry run black . --check
-	poetry run mypy .
+	uv run ruff check .
+	uv run ruff format --check .
+	uv run mypy .
 
 .PHONY: format
 format:
-	poetry run isort .
-	poetry run black .
+	uv run ruff format .
 
 .PHONY: test
 test:
-	poetry run pytest tests
+	uv run pytest tests
 
 .PHONY: test-cov
 test-cov:
-	poetry run pytest tests \
-		--cov \
+	uv run pytest tests \
+		--cov src \
 		--cov-branch \
 		--junitxml pytest.xml \
 		--cov-report term-missing:skip-covered | tee pytest-coverage.txt

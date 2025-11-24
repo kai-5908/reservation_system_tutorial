@@ -17,17 +17,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       
-      - name: Install poetry
-        run: pipx install poetry==1.8.4
-      
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: poetry
-        
+      
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      
       - name: Install Dependencies
-        run: poetry install --no-root
+        run: uv sync --locked --no-install-project
       
       - name: print working dir
         run: ls -al
@@ -41,17 +40,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       
-      - name: Install poetry
-        run: pipx install poetry==1.8.4
-      
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: poetry
         
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      
       - name: Install Dependencies
-        run: poetry install --no-root
+        run: uv sync --locked --no-install-project
       
       - name: Test
         run: make test
@@ -62,17 +60,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       
-      - name: Install poetry
-        run: pipx install poetry==1.8.4
-      
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: poetry
         
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      
       - name: Install Dependencies
-        run: poetry install --no-root
+        run: uv sync --locked --no-install-project
       
       - name: Get Test Coverage
         run: make test-cov

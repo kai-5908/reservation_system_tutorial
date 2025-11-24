@@ -94,8 +94,8 @@ jobs:
       - name: Install uv
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
 
-      - name: Install bandit
-        run: uv pip install bandit
+      - name: Install Dependencies
+        run: uv sync --locked --no-install-project
       
       - name: Exec bandit
         run: uv run bandit -r . -ll -x .venv

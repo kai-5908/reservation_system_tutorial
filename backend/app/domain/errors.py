@@ -12,3 +12,7 @@ class CapacityError(Exception):
 
 class VersionConflictError(Exception):
     pass
+
+
+class CancelNotAllowedError(Exception):
+    pass

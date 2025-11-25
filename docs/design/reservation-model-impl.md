@@ -1,11 +1,11 @@
-﻿# Implementation Design: ADR 0001 (予約データモデル)
+# Implementation Design: ADR 0001（予約モデル実装）
 
 ## スコープ
-- ADR 0001 のデータモデルを実装するための具体設計。
-- マイグレーション方針（SQL 例）、制約/インデックス、アプリ側の型・バリデーションの要点を示す。
-- 整合性/ロック/時刻方針は ADR 0002 参照。
+- ADR0001 のデータモデル実装のベース設計。
+- マイグレーション（SQL 例）、制約/インデックス、アプリケーションの型/バリデーションの骨子。
+- 時刻/整合性/ロックは ADR0002 を参照。
 
-## マイグレーション（例: MySQL / InnoDB）
+## マイグレーション例（MySQL / InnoDB）
 ```sql
 CREATE TABLE shops (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -35,7 +35,7 @@ CREATE TABLE reservations (
   slot_id BIGINT NOT NULL,
   user_id BIGINT NOT NULL,
   party_size INT NOT NULL,
-  status ENUM('request_pending','booked','cancel_pending','cancelled') NOT NULL DEFAULT 'request_pending',
+  status ENUM('request_pending','booked','cancelled') NOT NULL DEFAULT 'request_pending',
   version INT NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -51,43 +51,43 @@ CREATE INDEX idx_res_slot ON reservations(slot_id);
 CREATE INDEX idx_res_user ON reservations(user_id);
 ```
 
-### 備考
-- CHECK 制約は MySQL 8+ で有効（8未満ではアプリ側で検証が必要）。
-- DATETIME に UTC を保存し、入出力時に JST へ変換（ADR 0002）。
-- seat_id は NULL 許容。席結合/専有の運用ルールはアプリ層/運用ルールで定義。
+### 補足
+- CHECK 制約は MySQL 8+ で有効（8未満ではアプリ側で補完が必要）。
+- DATETIME は UTC で保存し、入出力は JST へ変換（ADR0002）。
+- seat_id は NULL を許容し、店舗全体/座席単位の枠を混在可能。
 
-## アプリ層の型・バリデーション（例）
+## アプリ側の型・バリデーション（例）
 - Slot
   - shop_id: bigint
   - seat_id: Optional[bigint]
-  - starts_at/ends_at: datetime (UTC 保持)
+  - starts_at/ends_at: datetime (UTC 保存)
   - capacity: int >= 1
   - status: Literal['open','closed','blocked']
 - Reservation
   - slot_id: bigint
   - user_id: bigint
   - party_size: int >= 1
-  - status: Literal['request_pending','booked','cancel_pending','cancelled']
-  - version: int (レスポンスに含め、更新/キャンセル時に If-Match 用に利用可)
+  - status: Literal['request_pending','booked','cancelled']
+  - version: int（楽観ロック用、更新時に If-Match などで利用）
 
-## バリデーション/制約の実装ポイント
-- starts_at < ends_at をアプリ層でもチェック（DB CHECK への依存を避けるため）。
-- capacity >= 1, party_size >= 1 を API バリデーションで必須。
-- seat_id の NULL とユニークキーの相性: MySQL では NULL はユニークを許容するため、(shop_id, seat_id, starts_at, ends_at) で seat_id が NULL の行は複数作れる。必要ならアプリ側で「seat_id NULL の枠は店舗単位で同時間帯に1件まで」など運用ルールで抑制する。
-- status 値は列挙でバリデーションし、想定外文字列を禁止。
+## 制約/整合性のポイント
+- starts_at < ends_at をマイグレーションとアプリでチェック。
+- capacity >= 1, party_size >= 1 は API 側でバリデーション。
+- seat_id NULL とユニーク: MySQL では NULL はユニークキーで重複扱いにならないため、店舗全体枠と座席指定枠を混在可能。必要に応じてアプリ側で NULL を 1 店舗 1 件に制限するなど調整。
+- status 値は固定リストで管理し、外部からの恣意的な値を防ぐ。
 
-## マイグレーション順序の例
-1) shops / users（既存ならスキップ）
+## 実装ステップ（例）
+1) shops / users（ユーザーテーブルは本設計で別途定義）
 2) slots
 3) reservations
-4) インデックス追加（必要に応じて同時）
+4) インデックス追加（必要に応じて再実行可）
 
-## アプリ実装の入口（例）
-- リポジトリ層: `SlotRepository`, `ReservationRepository` を定義し、作成/更新/取得を実装。
-- DTO/Pydantic モデル: SlotCreate/SlotRead, ReservationCreate/ReservationRead などを定義。
-- ステータスの遷移ルールとロック戦略は ADR 0002 に従う。
+## アプリ設計の骨子（例）
+- リポジトリインターフェース: `SlotRepository`, `ReservationRepository` に CRUD/取得系を定義。
+- DTO/Pydantic: SlotCreate/SlotRead, ReservationCreate/ReservationRead などを用意。
+- ステータス遷移・ロック方針は ADR0002 に従う。
 
 ## TODO / Open
-- seat_id NULL の枠をどこまで許容するか（店舗全体枠を複数作るか否か）。
-- status 遷移に伴うイベント/通知の要否。
-- users テーブルの詳細スキーマ（別 ADR で定義）。
+- seat_id NULL 枠を店舗あたり複数許容するか（現状は許容）。
+- status 遷移の詳細（キャンセル締め切りなどは ADR0002 で定義）。
+- users テーブルの詳細は別 ADR で定義。

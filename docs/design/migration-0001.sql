@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS reservations (
   slot_id BIGINT NOT NULL,
   user_id BIGINT NOT NULL,
   party_size INT NOT NULL,
-  status ENUM('request_pending','booked','cancel_pending','cancelled') NOT NULL DEFAULT 'request_pending',
+  status ENUM('request_pending','booked','cancelled') NOT NULL DEFAULT 'request_pending',
   version INT NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

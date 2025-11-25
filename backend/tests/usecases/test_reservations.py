@@ -1,8 +1,8 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Optional, Tuple, cast
 
 import pytest
-from app.domain.errors import VersionConflictError
+from app.domain.errors import CancelNotAllowedError, VersionConflictError
 from app.models import Reservation, ReservationStatus, Slot, SlotStatus
 from app.usecases import reservations as uc
 
@@ -62,6 +62,7 @@ class FakeReservationStruct:
         self.slot_id: int = 1
         self.user_id: int = 1
         self.updated_at: Optional[object] = None
+        self.starts_at = datetime.utcnow() + timedelta(days=3)
 
 
 @pytest.mark.asyncio
@@ -81,7 +82,7 @@ async def test_cancel_updates_when_booked() -> None:
     reservation = cast(Reservation, reservation_struct)
     repo = FakeResRepo(reservation)
     updated, _, status_value = await uc.cancel_reservation(repo, reservation_id=1, user_id=1, version=1)
-    assert status_value == ReservationStatus.CANCEL_PENDING
+    assert status_value == ReservationStatus.CANCELLED
     assert repo.cancel_called is True
 
 
@@ -92,4 +93,26 @@ async def test_cancel_raises_on_version_conflict() -> None:
     reservation = cast(Reservation, reservation_struct)
     repo = FakeResRepo(reservation)
     with pytest.raises(VersionConflictError):
+        await uc.cancel_reservation(repo, reservation_id=1, user_id=1, version=1)
+
+
+@pytest.mark.asyncio
+async def test_cancel_idempotent_when_already_pending() -> None:
+    reservation_struct = FakeReservationStruct(ReservationStatus.CANCELLED)
+    reservation_struct.version = 5
+    reservation = cast(Reservation, reservation_struct)
+    repo = FakeResRepo(reservation)
+    updated, _, status_value = await uc.cancel_reservation(repo, reservation_id=1, user_id=1, version=1)
+    assert status_value == ReservationStatus.CANCELLED
+    assert repo.cancel_called is False
+
+
+@pytest.mark.asyncio
+async def test_cancel_forbidden_within_cutoff() -> None:
+    reservation_struct = FakeReservationStruct(ReservationStatus.BOOKED)
+    # starts_at within 2 days from now
+    reservation_struct.slot.starts_at = datetime.utcnow()
+    reservation = cast(Reservation, reservation_struct)
+    repo = FakeResRepo(reservation)
+    with pytest.raises(CancelNotAllowedError):
         await uc.cancel_reservation(repo, reservation_id=1, user_id=1, version=1)

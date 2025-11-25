@@ -4,7 +4,13 @@ from fastapi import APIRouter, Body, Depends, Header, HTTPException, Path, statu
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..deps import get_current_user_id, get_session
-from ..domain.errors import CapacityError, DuplicateReservationError, SlotNotOpenError, VersionConflictError
+from ..domain.errors import (
+    CancelNotAllowedError,
+    CapacityError,
+    DuplicateReservationError,
+    SlotNotOpenError,
+    VersionConflictError,
+)
 from ..infrastructure.repositories import SqlAlchemyReservationRepository, SqlAlchemySlotRepository
 from ..schemas import ReservationCancel, ReservationCreate, ReservationRead
 from ..usecases import reservations as reservation_usecase
@@ -85,15 +91,14 @@ async def cancel_reservation(
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="reservation not found")
         except VersionConflictError:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="version conflict")
+        except CancelNotAllowedError:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="cancellation not allowed within cutoff")
 
     return ReservationRead.from_db(reservation=updated, slot=slot, shop_id=slot.shop_id)
 
 
 def _extract_version(if_match: str | None, payload: ReservationCancel | None) -> int:
-    """
-    Header If-Match を優先し、無ければ Body.version を使う。
-    いずれも無い場合は 400 を返す。
-    """
+    """If-Match を優先し、無ければ Body.version。いずれも無ければ 400。"""
     if if_match:
         token = if_match.strip()
         if token.startswith("W/"):

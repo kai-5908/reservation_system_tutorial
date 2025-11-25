@@ -27,7 +27,7 @@
   - キャンセル API は If-Match ヘッダを優先し、無ければ Body.version を使う。どちらも無ければ 400。版数不一致は 409。
 
 ### ステータス遷移の最小ルール
-- 予約: `request_pending` → `booked` → `cancel_pending` → `cancelled`（`cancel_pending` を経由して店舗承認フローを挟める。`cancelled`/`cancel_pending` への再リクエストは冪等に扱う）
+- 予約: `request_pending` → `booked` → `cancelled`（ユーザーは開始 2 日前より前なら即 `cancelled`、2 日前以降は不可。店舗はいつでも `cancelled` へ遷移可）。`cancelled` への再リクエストは冪等に扱う。
 - スロット: `open` のみ予約可。`closed`/`blocked` は予約不可。
 
 ## 根拠 / Rationale
@@ -36,9 +36,9 @@
 - If-Match 優先にすることで HTTP 標準の条件付き更新に合わせつつ、ボディ版数もフォールバックで許容。
 
 ## 影響 / Consequences
-- 実装: 時刻変換と tz バリデーションの追加、キャンセル API に版数必須、`cancel_pending` ステップを考慮した処理と UI。
-- API: バージョン不一致は 409、tz 無し入力は 400。予約レスポンスは JST で返す。
-- 運用: `cancel_pending` を店舗オペレーションに合わせて使い分ける。必要に応じて `created_at`/`updated_at` をレスポンスへ追加可能。
+- 実装: 時刻変換と tz バリデーションの追加、キャンセル API に版数必須、キャンセル猶予ルール（開始 2 日前で締め切り）。
+- API: バージョン不一致は 409、tz 無し入力は 400、キャンセル期限超過は 403。予約レスポンスは JST で返す。
+- 運用: 必要に応じて `created_at`/`updated_at` をレスポンスへ追加可能。
 
 ## オープン事項 / Open Questions
 - party_size と「席の占有単位」の整合（人数以外の課金単位が必要か）。

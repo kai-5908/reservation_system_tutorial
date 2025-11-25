@@ -88,7 +88,7 @@ GET /me/reservations/{reservation_id}
 ## 予約キャンセル（ユーザー）
 POST /me/reservations/{reservation_id}/cancel
 - ボディ: `{ "version": 1 }`（楽観ロック用、任意で If-Match ヘッダでも可）
-- 遷移: booked → cancel_pending → cancelled（最小運用なら booked → cancelled を即時でも可）
+- 遷移: booked → cancelled（ユーザーは開始2日前より前のみキャンセル可。店舗はいつでもキャンセル可）
 - レスポンス 200:
 ```json
 {

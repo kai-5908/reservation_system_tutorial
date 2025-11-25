@@ -42,7 +42,7 @@ reservations
   - slot_id (FK -> slots.id)
   - user_id (FK -> users.id)
   - party_size (NOT NULL)
-  - status (ENUM: request_pending/booked/cancel_pending/cancelled, default request_pending)
+  - status (ENUM: request_pending/booked/cancelled, default request_pending)
   - version (INT, default 1)
   - created_at
   - updated_at

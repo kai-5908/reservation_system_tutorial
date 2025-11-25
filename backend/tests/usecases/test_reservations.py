@@ -44,13 +44,14 @@ class FakeResRepo:
 
 class FakeReservationStruct:
     def __init__(self, status: ReservationStatus) -> None:
+        starts_at = datetime.utcnow() + timedelta(days=3)
         self.id: int = 1
         self.slot: Slot = Slot(
             id=1,
             shop_id=1,
             seat_id=None,
-            starts_at=datetime.utcnow(),
-            ends_at=datetime.utcnow(),
+            starts_at=starts_at,
+            ends_at=starts_at + timedelta(hours=1),
             capacity=4,
             status=SlotStatus.OPEN,
             created_at=datetime.utcnow(),
@@ -62,7 +63,7 @@ class FakeReservationStruct:
         self.slot_id: int = 1
         self.user_id: int = 1
         self.updated_at: Optional[object] = None
-        self.starts_at = datetime.utcnow() + timedelta(days=3)
+        self.starts_at = starts_at
 
 
 @pytest.mark.asyncio

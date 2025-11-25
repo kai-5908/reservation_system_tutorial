@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_serializer
 
 from .models import Reservation, ReservationStatus, Slot, SlotStatus
 from .utils.time import JST, utc_naive_to_jst
@@ -17,7 +17,9 @@ class SlotAvailability(BaseModel):
     status: SlotStatus
     remaining: int
 
-    model_config = {"json_encoders": {datetime: lambda v: v.astimezone(JST).isoformat()}}
+    @field_serializer("starts_at", "ends_at")
+    def _ser_datetime(self, dt: datetime) -> str:
+        return dt.astimezone(JST).isoformat()
 
 
 class ReservationCreate(BaseModel):
@@ -41,7 +43,9 @@ class ReservationRead(BaseModel):
     seat_id: Optional[int]
     shop_id: Optional[int] = None
 
-    model_config = {"json_encoders": {datetime: lambda v: v.astimezone(JST).isoformat()}}
+    @field_serializer("starts_at", "ends_at")
+    def _ser_datetime(self, dt: datetime) -> str:
+        return dt.astimezone(JST).isoformat()
 
     @classmethod
     def from_db(

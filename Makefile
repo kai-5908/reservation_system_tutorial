@@ -9,11 +9,15 @@ DB_USER ?= app
 DB_PASS ?= app_password
 DB_NAME ?= reservation
 
-.PHONY: db-up db-down db-logs db-ps db-cli db-migrate
+.PHONY: db-up db-down db-logs db-ps db-cli db-migrate dev-up
 
 # Start MySQL in background
 db-up:
 	$(DC) -f $(DC_FILE) up -d db
+
+# Start backend dev environment (backend + db)
+dev-up:
+	$(DC) -f $(DC_FILE) up -d backend db
 
 # Stop and remove MySQL container
 db-down:

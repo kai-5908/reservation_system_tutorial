@@ -2,7 +2,7 @@ from types import SimpleNamespace
 
 import pytest
 from app.routers.reservations import _extract_version
-from app.schemas import ReservationCancel
+from app.schemas import ReservationCancel, ReservationReschedule
 from fastapi import HTTPException
 
 
@@ -39,3 +39,8 @@ def test_body_zero_raises_400() -> None:
     with pytest.raises(HTTPException) as excinfo:
         _extract_version(None, payload)  # type: ignore[arg-type]
     assert excinfo.value.status_code == 400
+
+
+def test_reschedule_body_used_when_no_header() -> None:
+    payload = ReservationReschedule(slot_id=123, version=8)
+    assert _extract_version(None, payload) == 8

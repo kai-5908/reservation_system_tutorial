@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 import pytest
 from app.routers.reservations import _extract_version
 from app.schemas import ReservationCancel
@@ -33,7 +35,7 @@ def test_header_zero_raises_400() -> None:
 
 
 def test_body_zero_raises_400() -> None:
-    payload = ReservationCancel(version=0)
+    payload = SimpleNamespace(version=0)  # bypass Pydantic validation to hit router validation
     with pytest.raises(HTTPException) as excinfo:
-        _extract_version(None, payload)
+        _extract_version(None, payload)  # type: ignore[arg-type]
     assert excinfo.value.status_code == 400

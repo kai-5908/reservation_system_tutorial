@@ -25,6 +25,10 @@ class ReservationCreate(BaseModel):
     party_size: int = Field(ge=1)
 
 
+class ReservationCancel(BaseModel):
+    version: Optional[int] = Field(default=None, ge=1)
+
+
 class ReservationRead(BaseModel):
     reservation_id: int
     slot_id: int

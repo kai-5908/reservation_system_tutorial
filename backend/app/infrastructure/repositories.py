@@ -67,6 +67,16 @@ class SqlAlchemyReservationRepository(ReservationRepository):
         )
         return int(await self.session.scalar(stmt) or 0)
 
+    async def get_for_user_for_update(self, reservation_id: int, user_id: int) -> Optional[Tuple[Reservation, Slot]]:
+        stmt: Select[Tuple[Reservation, Slot]] = (
+            select(Reservation, Slot)
+            .join(Slot, Reservation.slot_id == Slot.id)
+            .where(Reservation.id == reservation_id, Reservation.user_id == user_id)
+            .with_for_update()
+        )
+        row = (await self.session.execute(stmt)).first()
+        return cast(Optional[Tuple[Reservation, Slot]], row)
+
     async def create(
         self,
         slot_id: int,

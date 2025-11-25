@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
 from ..domain.errors import SlotNotOpenError
+from ..domain.errors import VersionConflictError
 from ..domain.repositories import ReservationRepository, SlotRepository
 from ..domain.services import SlotSnapshot, validate_reservation
 from ..models import Reservation, ReservationStatus, Slot
@@ -43,14 +44,17 @@ async def cancel_reservation(
     *,
     reservation_id: int,
     user_id: int,
+    version: int,
 ) -> tuple[Reservation, Slot, ReservationStatus]:
-    row = await res_repo.get_for_user(reservation_id, user_id)
+    row = await res_repo.get_for_user_for_update(reservation_id, user_id)
     if row is None:
         raise SlotNotOpenError("reservation not found")
     reservation, slot = row
-    if reservation.status == ReservationStatus.CANCELLED:
+    if reservation.version != version:
+        raise VersionConflictError("version mismatch")
+    if reservation.status in (ReservationStatus.CANCELLED, ReservationStatus.CANCEL_PENDING):
         return reservation, slot, reservation.status
-    reservation.status = ReservationStatus.CANCELLED
+    reservation.status = ReservationStatus.CANCEL_PENDING
     reservation.version += 1
     reservation.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
     updated = await res_repo.cancel(reservation)

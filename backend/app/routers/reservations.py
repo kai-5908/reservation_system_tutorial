@@ -1,12 +1,12 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, Path, status
+from fastapi import APIRouter, Body, Depends, Header, HTTPException, Path, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..deps import get_current_user_id, get_session
-from ..domain.errors import CapacityError, DuplicateReservationError, SlotNotOpenError
+from ..domain.errors import CapacityError, DuplicateReservationError, SlotNotOpenError, VersionConflictError
 from ..infrastructure.repositories import SqlAlchemyReservationRepository, SqlAlchemySlotRepository
-from ..schemas import ReservationCreate, ReservationRead
+from ..schemas import ReservationCancel, ReservationCreate, ReservationRead
 from ..usecases import reservations as reservation_usecase
 
 router = APIRouter(prefix="", tags=["reservations"])
@@ -66,9 +66,12 @@ async def get_my_reservation(
 @router.post("/me/reservations/{reservation_id}/cancel", response_model=ReservationRead)
 async def cancel_reservation(
     reservation_id: int = Path(..., ge=1),
+    payload: ReservationCancel | None = Body(default=None),
+    if_match: str | None = Header(default=None, alias="If-Match"),
     session: AsyncSession = Depends(get_session),
     user_id: int = Depends(get_current_user_id),
 ) -> ReservationRead:
+    version = _extract_version(if_match, payload)
     res_repo = SqlAlchemyReservationRepository(session)
     async with session.begin():
         try:
@@ -76,8 +79,30 @@ async def cancel_reservation(
                 res_repo,
                 reservation_id=reservation_id,
                 user_id=user_id,
+                version=version,
             )
         except SlotNotOpenError:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="reservation not found")
+        except VersionConflictError:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="version conflict")
 
     return ReservationRead.from_db(reservation=updated, slot=slot, shop_id=slot.shop_id)
+
+
+def _extract_version(if_match: str | None, payload: ReservationCancel | None) -> int:
+    """
+    Header If-Match を優先し、無ければ Body.version を使う。
+    いずれも無い場合は 400 を返す。
+    """
+    if if_match:
+        token = if_match.strip()
+        if token.startswith("W/"):
+            token = token[2:].strip()
+        token = token.strip('"')
+        try:
+            return int(token)
+        except ValueError:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid If-Match header")
+    if payload is not None and payload.version is not None:
+        return payload.version
+    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="version is required")

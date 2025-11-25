@@ -5,14 +5,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..deps import get_current_user_id, get_session
 from ..domain.errors import (
-    CancelNotAllowedError,
     CapacityError,
     DuplicateReservationError,
+    RescheduleNotAllowedError,
     SlotNotOpenError,
     VersionConflictError,
 )
 from ..infrastructure.repositories import SqlAlchemyReservationRepository, SqlAlchemySlotRepository
-from ..schemas import ReservationCancel, ReservationCreate, ReservationRead
+from ..schemas import ReservationCancel, ReservationCreate, ReservationRead, ReservationReschedule
 from ..usecases import reservations as reservation_usecase
 
 router = APIRouter(prefix="", tags=["reservations"])
@@ -97,7 +97,42 @@ async def cancel_reservation(
     return ReservationRead.from_db(reservation=updated, slot=slot, shop_id=slot.shop_id)
 
 
-def _extract_version(if_match: str | None, payload: ReservationCancel | None) -> int:
+@router.post("/me/reservations/{reservation_id}/reschedule", response_model=ReservationRead)
+async def reschedule_reservation(
+    reservation_id: int = Path(..., ge=1),
+    payload: ReservationReschedule = Body(...),
+    if_match: str | None = Header(default=None, alias="If-Match"),
+    session: AsyncSession = Depends(get_session),
+    user_id: int = Depends(get_current_user_id),
+) -> ReservationRead:
+    version = _extract_version(if_match, payload)
+    slot_repo = SqlAlchemySlotRepository(session)
+    res_repo = SqlAlchemyReservationRepository(session)
+    async with session.begin():
+        try:
+            updated, slot = await reservation_usecase.reschedule_reservation(
+                slot_repo,
+                res_repo,
+                reservation_id=reservation_id,
+                user_id=user_id,
+                new_slot_id=payload.slot_id,
+                version=version,
+            )
+        except SlotNotOpenError:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="slot not available")
+        except VersionConflictError:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="version conflict")
+        except DuplicateReservationError:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="duplicate reservation for this slot")
+        except CapacityError:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="capacity exceeded")
+        except RescheduleNotAllowedError:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="reschedule not allowed")
+
+    return ReservationRead.from_db(reservation=updated, slot=slot, shop_id=slot.shop_id)
+
+
+def _extract_version(if_match: str | None, payload: ReservationCancel | ReservationReschedule | None) -> int:
     """Prefer If-Match; otherwise Body.version. Require version >= 1."""
     if if_match:
         token = if_match.strip()

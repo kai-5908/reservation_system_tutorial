@@ -102,6 +102,30 @@ POST /me/reservations/{reservation_id}/cancel
   - 409: version 不一致（同時更新）
 
 ---
+## 予約変更/リスケ（ユーザー）
+POST /me/reservations/{reservation_id}/reschedule
+- ボディ: `{ "slot_id": 2, "version": 1 }`（version は If-Match でも可）
+- 遷移: booked → booked（変更先が open で、残席 >= party_size、同一ユーザーの重複予約なし、同一店舗のみ）
+- レスポンス 200:
+```json
+{
+  "reservation_id": 100,
+  "slot_id": 2,
+  "shop_id": 10,
+  "seat_id": null,
+  "starts_at": "2024-10-20T19:00:00+09:00",
+  "ends_at": "2024-10-20T20:00:00+09:00",
+  "party_size": 2,
+  "status": "booked",
+  "version": 2
+}
+```
+- エラー:
+  - 403: カットオフ内（開始2日前以降）/予約ステータス不許可/店舗が異なる
+  - 404: 予約が無い or 変更先スロットが存在しない/非 open
+  - 409: version 不一致 / capacity exceeded / duplicate reservation
+
+---
 ## 予約枠作成（店舗向け、管理API想定）
 POST /shops/{shop_id}/slots
 - ボディ:

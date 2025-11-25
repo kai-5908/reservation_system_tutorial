@@ -121,3 +121,8 @@ class SqlAlchemyReservationRepository(ReservationRepository):
         self.session.add(reservation)
         await self.session.flush()
         return reservation
+
+    async def reschedule(self, reservation: Reservation) -> Reservation:
+        self.session.add(reservation)
+        await self.session.flush()
+        return reservation

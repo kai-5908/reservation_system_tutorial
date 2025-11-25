@@ -28,7 +28,7 @@ def test_invalid_header_raises_400() -> None:
 
 def test_header_zero_raises_400() -> None:
     with pytest.raises(HTTPException) as excinfo:
-        _extract_version('\"0\"', None)
+        _extract_version('"0"', None)
     assert excinfo.value.status_code == 400
 
 

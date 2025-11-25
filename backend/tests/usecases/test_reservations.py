@@ -91,8 +91,8 @@ class FakeSlotRepo:
         start: datetime,
         end: datetime,
         seat_id: int | None,
-    ):
-        raise NotImplementedError
+    ) -> list[tuple[Slot, int]]:
+        raise NotImplementedError("not used in these tests")
 
 
 class FakeRescheduleRepo:

@@ -1,23 +1,25 @@
 from datetime import datetime, timedelta
+from typing import Any, Tuple, cast
 
 import pytest
+from app.domain.errors import RescheduleNotAllowedError
 from app.models import Reservation, ReservationStatus, Slot, SlotStatus
 from app.routers import reservations as router
 from app.schemas import ReservationReschedule
-from app.domain.errors import RescheduleNotAllowedError
 from fastapi import HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class DummySession:
     """Minimal async session stub that supports `async with session.begin()`."""
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "DummySession":
         return self
 
-    async def __aexit__(self, exc_type, exc, tb):
+    async def __aexit__(self, exc_type: object, exc: object, tb: object) -> bool:
         return False
 
-    def begin(self):
+    def begin(self) -> "DummySession":
         return self
 
 
@@ -66,7 +68,15 @@ async def test_reschedule_router_returns_200_and_uses_if_match(monkeypatch: pyte
     target_slot = _make_slot(2)
     reservation = _make_reservation(current_slot)
 
-    async def fake_reschedule(slot_repo, res_repo, *, reservation_id, user_id, new_slot_id, version):
+    async def fake_reschedule(
+        slot_repo: DummySlotRepo,
+        res_repo: DummyReservationRepo,
+        *,
+        reservation_id: int,
+        user_id: int,
+        new_slot_id: int,
+        version: int,
+    ) -> Tuple[Reservation, Slot]:
         assert isinstance(slot_repo, DummySlotRepo)
         assert isinstance(res_repo, DummyReservationRepo)
         assert reservation_id == reservation.id
@@ -79,14 +89,14 @@ async def test_reschedule_router_returns_200_and_uses_if_match(monkeypatch: pyte
 
     monkeypatch.setattr(router, "SqlAlchemySlotRepository", DummySlotRepo)
     monkeypatch.setattr(router, "SqlAlchemyReservationRepository", DummyReservationRepo)
-    monkeypatch.setattr(router.reservation_usecase, "reschedule_reservation", fake_reschedule)
+    monkeypatch.setattr(cast(Any, router.reservation_usecase), "reschedule_reservation", fake_reschedule)  # type: ignore[attr-defined]
 
     payload = ReservationReschedule(slot_id=target_slot.id)
     result = await router.reschedule_reservation(
         reservation_id=reservation.id,
         payload=payload,
         if_match='"10"',
-        session=session,
+        session=cast(AsyncSession, session),
         user_id=reservation.user_id,
     )
 
@@ -101,20 +111,20 @@ async def test_reschedule_router_maps_domain_error_to_http_403(monkeypatch: pyte
     slot = _make_slot(1)
     reservation = _make_reservation(slot)
 
-    async def fake_reschedule(*args, **kwargs):
+    async def fake_reschedule(*args: object, **kwargs: object) -> Tuple[Reservation, Slot]:
         raise RescheduleNotAllowedError("cutoff")
 
     monkeypatch.setattr(router, "SqlAlchemySlotRepository", DummySlotRepo)
     monkeypatch.setattr(router, "SqlAlchemyReservationRepository", DummyReservationRepo)
-    monkeypatch.setattr(router.reservation_usecase, "reschedule_reservation", fake_reschedule)
+    monkeypatch.setattr(cast(Any, router.reservation_usecase), "reschedule_reservation", fake_reschedule)  # type: ignore[attr-defined]
 
     payload = ReservationReschedule(slot_id=2)
     with pytest.raises(HTTPException) as excinfo:
         await router.reschedule_reservation(
             reservation_id=reservation.id,
             payload=payload,
-            if_match="\"1\"",
-            session=session,
+            if_match='"1"',
+            session=cast(AsyncSession, session),
             user_id=reservation.user_id,
         )
 

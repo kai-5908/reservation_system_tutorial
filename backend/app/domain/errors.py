@@ -16,3 +16,7 @@ class VersionConflictError(Exception):
 
 class CancelNotAllowedError(Exception):
     pass
+
+
+class RescheduleNotAllowedError(Exception):
+    pass

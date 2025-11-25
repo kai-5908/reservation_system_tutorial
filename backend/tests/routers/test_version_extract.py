@@ -24,3 +24,20 @@ def test_invalid_header_raises_400() -> None:
     with pytest.raises(HTTPException) as excinfo:
         _extract_version("invalid", None)
     assert excinfo.value.status_code == 400
+
+
+def test_header_zero_raises_400() -> None:
+    with pytest.raises(HTTPException) as excinfo:
+        _extract_version('\"0\"', None)
+    assert excinfo.value.status_code == 400
+
+
+def test_body_zero_raises_400() -> None:
+    class Dummy:
+        def __init__(self, version: int) -> None:
+            self.version = version
+
+    payload = Dummy(version=0)
+    with pytest.raises(HTTPException) as excinfo:
+        _extract_version(None, payload)
+    assert excinfo.value.status_code == 400

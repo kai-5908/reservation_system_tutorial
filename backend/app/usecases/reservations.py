@@ -86,5 +86,9 @@ async def get_user_reservation(
 def _is_within_cutoff(starts_at: datetime, *, days: int) -> bool:
     """Return True if now UTC is within `days` before the slot starts."""
     now_utc = datetime.now(timezone.utc)
-    cutoff = starts_at.replace(tzinfo=timezone.utc) - timedelta(days=days)
+    if starts_at.tzinfo is None:
+        starts_at_utc = starts_at.replace(tzinfo=timezone.utc)
+    else:
+        starts_at_utc = starts_at.astimezone(timezone.utc)
+    cutoff = starts_at_utc - timedelta(days=days)
     return now_utc >= cutoff

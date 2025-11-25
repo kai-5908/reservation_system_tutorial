@@ -1,6 +1,6 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
-from ..domain.errors import SlotNotOpenError
+from ..domain.errors import CancelNotAllowedError, SlotNotOpenError, VersionConflictError
 from ..domain.repositories import ReservationRepository, SlotRepository
 from ..domain.services import SlotSnapshot, validate_reservation
 from ..models import Reservation, ReservationStatus, Slot
@@ -43,13 +43,22 @@ async def cancel_reservation(
     *,
     reservation_id: int,
     user_id: int,
+    version: int,
 ) -> tuple[Reservation, Slot, ReservationStatus]:
-    row = await res_repo.get_for_user(reservation_id, user_id)
+    row = await res_repo.get_for_user_for_update(reservation_id, user_id)
     if row is None:
         raise SlotNotOpenError("reservation not found")
     reservation, slot = row
+    # Idempotent: already cancelled returns as-is
     if reservation.status == ReservationStatus.CANCELLED:
         return reservation, slot, reservation.status
+    # Version check after idempotent guard
+    if reservation.version != version:
+        raise VersionConflictError("version mismatch")
+    # Cancellation cutoff: within 2 days before start is not cancellable by user
+    if _is_within_cutoff(slot.starts_at, days=2):
+        raise CancelNotAllowedError("cancellation window closed")
+
     reservation.status = ReservationStatus.CANCELLED
     reservation.version += 1
     reservation.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
@@ -72,3 +81,14 @@ async def get_user_reservation(
     user_id: int,
 ) -> tuple[Reservation, Slot] | None:
     return await res_repo.get_for_user(reservation_id, user_id)
+
+
+def _is_within_cutoff(starts_at: datetime, *, days: int) -> bool:
+    """Return True if now UTC is within `days` before the slot starts."""
+    now_utc = datetime.now(timezone.utc)
+    if starts_at.tzinfo is None:
+        starts_at_utc = starts_at.replace(tzinfo=timezone.utc)
+    else:
+        starts_at_utc = starts_at.astimezone(timezone.utc)
+    cutoff = starts_at_utc - timedelta(days=days)
+    return now_utc >= cutoff

@@ -23,6 +23,8 @@ class ReservationRepository(Protocol):
 
     async def sum_reserved(self, slot_id: int) -> int: ...
 
+    async def get_for_user_for_update(self, reservation_id: int, user_id: int) -> tuple[Reservation, Slot] | None: ...
+
     async def create(
         self,
         slot_id: int,

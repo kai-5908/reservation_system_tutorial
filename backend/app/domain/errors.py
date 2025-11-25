@@ -8,3 +8,11 @@ class DuplicateReservationError(Exception):
 
 class CapacityError(Exception):
     pass
+
+
+class VersionConflictError(Exception):
+    pass
+
+
+class CancelNotAllowedError(Exception):
+    pass

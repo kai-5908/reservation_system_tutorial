@@ -19,14 +19,14 @@
   - 一意制約: (shop_id, seat_id, starts_at, ends_at)
     - seat_id を NULL 許容とし、席を結合/専有する将来拡張に対応
   - インデックス: shop_id, seat_id
-- reservations: id (PK), slot_id (FK), user_id (FK), party_size INT (>=1), status ENUM('request_pending','booked','cancel_pending','cancelled'), created_at, updated_at, version INT (楽観ロック用)
+- reservations: id (PK), slot_id (FK), user_id (FK), party_size INT (>=1), status ENUM('request_pending','booked','cancelled'), created_at, updated_at, version INT (楽観ロック用)
   - 制約: party_size >= 1
   - 一意制約（候補）: (user_id, slot_id) — 同一ユーザーの同一枠重複を防ぐ
   - インデックス: slot_id, user_id
 
 ### ステータス（予約/枠）
 - slots.status: 'open' のみ予約を許可。'closed' は店舗都合クローズ、'blocked' はシステム保守などで予約不可。
-- reservations.status: 'request_pending'（受付中） / 'booked'（確定） / 'cancel_pending'（キャンセル申請中） / 'cancelled'（キャンセル確定）。
+- reservations.status: 'request_pending'（受付中） / 'booked'（確定） / 'cancelled'（キャンセル確定）。
 
 ## 根拠 / Rationale
 - seat_id を NULL 許容で持つことで、席専有/席結合と店舗全体の枠を両立しやすい。一意制約を seat_id 含みで設計しておけば拡張時に大きな変更が不要。

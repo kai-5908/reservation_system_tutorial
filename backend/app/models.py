@@ -22,7 +22,6 @@ class SlotStatus(StrEnum):
 class ReservationStatus(StrEnum):
     REQUEST_PENDING = "request_pending"
     BOOKED = "booked"
-    CANCEL_PENDING = "cancel_pending"
     CANCELLED = "cancelled"
 
 

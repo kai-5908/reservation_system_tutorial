@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Tuple, cast
 
 import pytest
@@ -8,6 +8,10 @@ from app.routers import reservations as router
 from app.schemas import ReservationReschedule
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+
+
+def _utc_now_naive() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 class DummySession:
@@ -34,7 +38,7 @@ class DummyReservationRepo:
 
 
 def _make_slot(slot_id: int) -> Slot:
-    starts = datetime.utcnow() + timedelta(days=3)
+    starts = _utc_now_naive() + timedelta(days=3)
     return Slot(
         id=slot_id,
         shop_id=1,
@@ -43,8 +47,8 @@ def _make_slot(slot_id: int) -> Slot:
         ends_at=starts + timedelta(hours=1),
         capacity=4,
         status=SlotStatus.OPEN,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=_utc_now_naive(),
+        updated_at=_utc_now_naive(),
     )
 
 
@@ -56,8 +60,8 @@ def _make_reservation(slot: Slot) -> Reservation:
         party_size=2,
         status=ReservationStatus.BOOKED,
         version=1,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=_utc_now_naive(),
+        updated_at=_utc_now_naive(),
     )
 
 

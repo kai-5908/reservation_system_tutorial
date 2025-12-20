@@ -1,12 +1,13 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..deps import get_session
 from ..infrastructure.repositories import SqlAlchemySlotRepository
-from ..schemas import SlotAvailability
+from ..schemas import SlotAvailability, SlotCreate, SlotRead
 from ..usecases import slots as slot_usecase
 from ..utils.time import to_utc_naive, utc_naive_to_jst
 
@@ -46,3 +47,47 @@ async def list_availability(
         )
         for entry in rows
     ]
+
+
+@router.post("/{shop_id}/slots", response_model=SlotRead, status_code=status.HTTP_201_CREATED)
+async def create_slot(
+    shop_id: int,
+    payload: SlotCreate,
+    session: AsyncSession = Depends(get_session),
+) -> SlotRead:
+    if payload.starts_at.tzinfo is None or payload.ends_at.tzinfo is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="starts_at/ends_at must have timezone")
+    if not _is_jst(payload.starts_at) or not _is_jst(payload.ends_at):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="starts_at/ends_at must be JST (+09:00)")
+    try:
+        starts_utc = to_utc_naive(payload.starts_at)
+        ends_utc = to_utc_naive(payload.ends_at)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="starts_at/ends_at must have timezone")
+
+    slot_repo = SqlAlchemySlotRepository(session)
+    async with session.begin():
+        try:
+            slot = await slot_usecase.create_slot(
+                slot_repo,
+                shop_id=shop_id,
+                seat_id=payload.seat_id,
+                starts_at=starts_utc,
+                ends_at=ends_utc,
+                capacity=payload.capacity,
+                status=payload.status,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+        except IntegrityError as exc:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="slot already exists") from exc
+
+    return SlotRead.from_db(slot=slot)
+
+
+def _is_jst(dt: datetime) -> bool:
+    """Return True when tz offset is exactly +09:00."""
+    if dt.tzinfo is None:
+        return False
+    offset = dt.tzinfo.utcoffset(dt)
+    return offset == timedelta(hours=9)

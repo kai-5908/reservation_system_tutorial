@@ -22,6 +22,40 @@ class SlotAvailability(BaseModel):
         return dt.astimezone(JST).isoformat()
 
 
+class SlotCreate(BaseModel):
+    seat_id: Optional[int] = None
+    starts_at: datetime
+    ends_at: datetime
+    capacity: int = Field(ge=1)
+    status: SlotStatus = SlotStatus.OPEN
+
+
+class SlotRead(BaseModel):
+    slot_id: int
+    shop_id: int
+    seat_id: Optional[int]
+    starts_at: datetime
+    ends_at: datetime
+    capacity: int
+    status: SlotStatus
+
+    @field_serializer("starts_at", "ends_at")
+    def _ser_datetime(self, dt: datetime) -> str:
+        return dt.astimezone(JST).isoformat()
+
+    @classmethod
+    def from_db(cls, *, slot: Slot) -> "SlotRead":
+        return cls(
+            slot_id=slot.id,
+            shop_id=slot.shop_id,
+            seat_id=slot.seat_id,
+            starts_at=utc_naive_to_jst(slot.starts_at),
+            ends_at=utc_naive_to_jst(slot.ends_at),
+            capacity=slot.capacity,
+            status=slot.status,
+        )
+
+
 class ReservationCreate(BaseModel):
     slot_id: int
     party_size: int = Field(ge=1)

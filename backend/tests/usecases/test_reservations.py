@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Tuple, cast
 
 import pytest
@@ -12,6 +12,10 @@ from app.domain.errors import (
 )
 from app.models import Reservation, ReservationStatus, Slot, SlotStatus
 from app.usecases import reservations as uc
+
+
+def _utc_now_naive() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 class FakeResRepo:
@@ -56,7 +60,7 @@ class FakeResRepo:
 
 class FakeReservationStruct:
     def __init__(self, status: ReservationStatus) -> None:
-        starts_at = datetime.utcnow() + timedelta(days=3)
+        starts_at = _utc_now_naive() + timedelta(days=3)
         self.id: int = 1
         self.slot: Slot = Slot(
             id=1,
@@ -66,8 +70,8 @@ class FakeReservationStruct:
             ends_at=starts_at + timedelta(hours=1),
             capacity=4,
             status=SlotStatus.OPEN,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=_utc_now_naive(),
+            updated_at=_utc_now_naive(),
         )
         self.status: ReservationStatus = status
         self.version: int = 1
@@ -187,7 +191,7 @@ async def test_cancel_idempotent_when_already_pending() -> None:
 async def test_cancel_forbidden_within_cutoff() -> None:
     reservation_struct = FakeReservationStruct(ReservationStatus.BOOKED)
     # starts_at within 2 days from now
-    reservation_struct.slot.starts_at = datetime.utcnow()
+    reservation_struct.slot.starts_at = _utc_now_naive()
     reservation = cast(Reservation, reservation_struct)
     repo = FakeResRepo(reservation)
     with pytest.raises(CancelNotAllowedError):
@@ -201,7 +205,7 @@ def _slot_with(
     status: SlotStatus = SlotStatus.OPEN,
     capacity: int = 4,
 ) -> Slot:
-    start = starts_at or datetime.utcnow() + timedelta(days=3)
+    start = starts_at or _utc_now_naive() + timedelta(days=3)
     return Slot(
         id=slot_id,
         shop_id=shop_id,
@@ -210,8 +214,8 @@ def _slot_with(
         ends_at=start + timedelta(hours=1),
         capacity=capacity,
         status=status,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=_utc_now_naive(),
+        updated_at=_utc_now_naive(),
     )
 
 
@@ -242,7 +246,7 @@ async def test_reschedule_moves_to_target_slot_and_increments_version() -> None:
 
 @pytest.mark.asyncio
 async def test_reschedule_disallowed_within_cutoff() -> None:
-    start = datetime.utcnow() + timedelta(hours=12)
+    start = _utc_now_naive() + timedelta(hours=12)
     current_slot = _slot_with(1, starts_at=start)
     target_slot = _slot_with(2)
     reservation = cast(Reservation, FakeReservationStruct(ReservationStatus.BOOKED))

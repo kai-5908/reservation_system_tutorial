@@ -25,6 +25,21 @@ class ReservationStatus(StrEnum):
     CANCELLED = "cancelled"
 
 
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    email: Mapped[str] = mapped_column(String(255), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    phone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    email_verified_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=False), nullable=True)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    auth_provider: Mapped[str] = mapped_column(String(50), nullable=False, default="local")
+    auth_provider_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=False), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=False), nullable=False)
+
+
 class Shop(Base):
     __tablename__ = "shops"
 

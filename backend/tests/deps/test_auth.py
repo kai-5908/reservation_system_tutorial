@@ -1,0 +1,64 @@
+from datetime import timedelta
+from typing import Any
+
+import pytest
+from app.config import Settings
+from app.deps import get_current_user_id
+from app.utils.auth import create_access_token
+from fastapi import HTTPException
+
+
+class DummySession:
+    def __init__(self, user_exists: bool) -> None:
+        self.user_exists = user_exists
+
+    async def __aenter__(self) -> "DummySession":  # pragma: no cover
+        return self
+
+    async def __aexit__(self, exc_type: object, exc: object, tb: object) -> bool:  # pragma: no cover
+        return False
+
+    async def scalar(self, *args: Any, **kwargs: Any) -> int | None:
+        return 1 if self.user_exists else None
+
+
+@pytest.mark.asyncio
+async def test_get_current_user_id_accepts_valid_token(monkeypatch: pytest.MonkeyPatch) -> None:
+    settings = Settings()
+    token = create_access_token(user_id=123, secret=settings.auth_secret, algorithm=settings.auth_algorithm)
+    session = DummySession(user_exists=True)
+    result = await get_current_user_id(authorization=f"Bearer {token}", session=session)  # type: ignore[arg-type]
+    assert result == 123
+
+
+@pytest.mark.asyncio
+async def test_get_current_user_id_rejects_missing_header() -> None:
+    session = DummySession(user_exists=True)
+    with pytest.raises(HTTPException) as excinfo:
+        await get_current_user_id(authorization=None, session=session)  # type: ignore[arg-type]
+    assert excinfo.value.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_get_current_user_id_rejects_expired_token(monkeypatch: pytest.MonkeyPatch) -> None:
+    settings = Settings()
+    token = create_access_token(
+        user_id=1,
+        secret=settings.auth_secret,
+        algorithm=settings.auth_algorithm,
+        expires_delta=timedelta(seconds=-1),
+    )
+    session = DummySession(user_exists=True)
+    with pytest.raises(HTTPException) as excinfo:
+        await get_current_user_id(authorization=f"Bearer {token}", session=session)  # type: ignore[arg-type]
+    assert excinfo.value.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_get_current_user_id_rejects_when_user_missing() -> None:
+    settings = Settings()
+    token = create_access_token(user_id=99, secret=settings.auth_secret, algorithm=settings.auth_algorithm)
+    session = DummySession(user_exists=False)
+    with pytest.raises(HTTPException) as excinfo:
+        await get_current_user_id(authorization=f"Bearer {token}", session=session)  # type: ignore[arg-type]
+    assert excinfo.value.status_code == 401

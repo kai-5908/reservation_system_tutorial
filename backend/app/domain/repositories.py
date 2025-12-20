@@ -3,11 +3,22 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Iterable, Protocol
 
-from ..models import Reservation, ReservationStatus, Slot
+from ..models import Reservation, ReservationStatus, Slot, SlotStatus
 
 
 class SlotRepository(Protocol):
     async def get_for_update(self, slot_id: int) -> Slot | None: ...
+
+    async def create(
+        self,
+        *,
+        shop_id: int,
+        seat_id: int | None,
+        starts_at: datetime,
+        ends_at: datetime,
+        capacity: int,
+        status: SlotStatus,
+    ) -> Slot: ...
 
     async def list_with_reserved(
         self,

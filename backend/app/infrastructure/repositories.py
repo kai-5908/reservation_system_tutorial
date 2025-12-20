@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, List, Optional, Tuple, cast
 
 from sqlalchemy import Select, func, select
@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from ..domain.repositories import ReservationRepository, SlotRepository
-from ..models import Reservation, ReservationStatus, Slot
+from ..models import Reservation, ReservationStatus, Slot, SlotStatus
 
 
 class SqlAlchemySlotRepository(SlotRepository):
@@ -18,6 +18,31 @@ class SqlAlchemySlotRepository(SlotRepository):
     async def get_for_update(self, slot_id: int) -> Slot | None:
         result = await self.session.scalar(select(Slot).where(Slot.id == slot_id).with_for_update())
         return result if isinstance(result, Slot) else None
+
+    async def create(
+        self,
+        *,
+        shop_id: int,
+        seat_id: int | None,
+        starts_at: datetime,
+        ends_at: datetime,
+        capacity: int,
+        status: SlotStatus,
+    ) -> Slot:
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        slot = Slot(
+            shop_id=shop_id,
+            seat_id=seat_id,
+            starts_at=starts_at,
+            ends_at=ends_at,
+            capacity=capacity,
+            status=status,
+            created_at=now,
+            updated_at=now,
+        )
+        self.session.add(slot)
+        await self.session.flush()
+        return slot
 
     async def list_with_reserved(
         self,
@@ -84,7 +109,7 @@ class SqlAlchemyReservationRepository(ReservationRepository):
         party_size: int,
         status: ReservationStatus,
     ) -> Reservation:
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
         reservation = Reservation(
             slot_id=slot_id,
             user_id=user_id,

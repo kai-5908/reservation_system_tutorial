@@ -38,6 +38,18 @@ class FakeSlotRepo:
         )
         return self.created
 
+    async def get_for_update(self, slot_id: int) -> Slot | None:  # pragma: no cover - unused in these tests
+        return None
+
+    async def list_with_reserved(  # pragma: no cover - unused in these tests
+        self,
+        shop_id: int,
+        start: datetime,
+        end: datetime,
+        seat_id: int | None,
+    ) -> list[tuple[Slot, int]]:
+        return []
+
 
 @pytest.mark.asyncio
 async def test_create_slot_persists_when_valid() -> None:

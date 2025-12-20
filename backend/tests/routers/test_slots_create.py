@@ -71,7 +71,7 @@ async def test_create_slot_returns_created_slot(monkeypatch: pytest.MonkeyPatch)
         return slot
 
     monkeypatch.setattr(router, "SqlAlchemySlotRepository", DummySlotRepo)
-    monkeypatch.setattr(router.slot_usecase, "create_slot", fake_create_slot)
+    monkeypatch.setattr(router.slot_usecase, "create_slot", fake_create_slot)  # type: ignore[attr-defined]
 
     payload = SlotCreate(
         seat_id=None,
@@ -138,7 +138,7 @@ async def test_create_slot_returns_409_on_duplicate(monkeypatch: pytest.MonkeyPa
         raise IntegrityError(None, None, None)  # type: ignore[arg-type]
 
     monkeypatch.setattr(router, "SqlAlchemySlotRepository", DummySlotRepo)
-    monkeypatch.setattr(router.slot_usecase, "create_slot", fake_create_slot)
+    monkeypatch.setattr(router.slot_usecase, "create_slot", fake_create_slot)  # type: ignore[attr-defined]
 
     payload = SlotCreate(
         seat_id=None,

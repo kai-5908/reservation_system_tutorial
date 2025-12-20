@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Any, Dict, List
 
 from ..domain.repositories import SlotRepository
-from ..models import SlotStatus
+from ..models import Slot, SlotStatus
 
 
 async def list_availability(
@@ -32,7 +32,7 @@ async def create_slot(
     ends_at: datetime,
     capacity: int,
     status: SlotStatus,
-):
+) -> Slot:
     if starts_at >= ends_at:
         raise ValueError("starts_at must be earlier than ends_at")
     if capacity < 1:

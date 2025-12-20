@@ -3,10 +3,12 @@ lint:
 	uv run ruff check .
 	uv run ruff format --check .
 	uv run mypy .
+	uv run ty check
 
 .PHONY: format
 format:
 	uv run ruff format .
+	uv run ruff check --fix
 
 .PHONY: test
 test:

@@ -57,6 +57,15 @@ class FakeResRepo:
     async def list_by_user(self, user_id: int) -> List[Tuple[Reservation, Slot]]:  # pragma: no cover
         return [(self.reservation, self.reservation.slot)]
 
+    async def list_with_reserved(  # pragma: no cover - satisfy SlotRepository when used
+        self,
+        shop_id: int,
+        start: datetime,
+        end: datetime,
+        seat_id: int | None,
+    ) -> list[tuple[Slot, int]]:
+        return []
+
 
 class FakeReservationStruct:
     def __init__(self, status: ReservationStatus) -> None:
@@ -89,14 +98,38 @@ class FakeSlotRepo:
     async def get_for_update(self, slot_id: int) -> Slot | None:
         return self.slots.get(slot_id)
 
-    async def list_with_reserved(  # pragma: no cover
+    async def create(
+        self,
+        *,
+        shop_id: int,
+        seat_id: int | None,
+        starts_at: datetime,
+        ends_at: datetime,
+        capacity: int,
+        status: SlotStatus,
+    ) -> Slot:  # pragma: no cover - not used in these tests
+        slot = Slot(
+            id=max(self.slots.keys(), default=0) + 1,
+            shop_id=shop_id,
+            seat_id=seat_id,
+            starts_at=starts_at,
+            ends_at=ends_at,
+            capacity=capacity,
+            status=status,
+            created_at=_utc_now_naive(),
+            updated_at=_utc_now_naive(),
+        )
+        self.slots[slot.id] = slot
+        return slot
+
+    async def list_with_reserved(  # pragma: no cover - not used in these tests
         self,
         shop_id: int,
         start: datetime,
         end: datetime,
         seat_id: int | None,
     ) -> list[tuple[Slot, int]]:
-        raise NotImplementedError("not used in these tests")
+        return []
 
 
 class FakeRescheduleRepo:
@@ -143,6 +176,15 @@ class FakeRescheduleRepo:
 
     async def list_by_user(self, user_id: int) -> List[Tuple[Reservation, Slot]]:  # pragma: no cover
         return [(self.reservation, self.reservation.slot)]
+
+    async def list_with_reserved(  # pragma: no cover - satisfy SlotRepository when used
+        self,
+        shop_id: int,
+        start: datetime,
+        end: datetime,
+        seat_id: int | None,
+    ) -> list[tuple[Slot, int]]:
+        return []
 
 
 @pytest.mark.asyncio

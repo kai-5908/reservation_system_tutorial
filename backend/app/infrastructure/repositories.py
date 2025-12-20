@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, List, Optional, Tuple, cast
 
 from sqlalchemy import Select, func, select
@@ -29,7 +29,7 @@ class SqlAlchemySlotRepository(SlotRepository):
         capacity: int,
         status: SlotStatus,
     ) -> Slot:
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
         slot = Slot(
             shop_id=shop_id,
             seat_id=seat_id,
@@ -109,7 +109,7 @@ class SqlAlchemyReservationRepository(ReservationRepository):
         party_size: int,
         status: ReservationStatus,
     ) -> Reservation:
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
         reservation = Reservation(
             slot_id=slot_id,
             user_id=user_id,

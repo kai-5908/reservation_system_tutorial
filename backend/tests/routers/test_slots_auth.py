@@ -1,7 +1,6 @@
-from fastapi.routing import APIRoute
-
 from app.deps import get_current_user_id
 from app.routers import slots
+from fastapi.routing import APIRoute
 
 
 def test_slots_router_requires_bearer_token() -> None:

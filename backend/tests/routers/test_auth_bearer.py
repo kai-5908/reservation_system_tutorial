@@ -2,12 +2,11 @@ from datetime import timedelta
 from typing import Any, AsyncIterator
 
 import pytest
-from fastapi import Depends, FastAPI
-from fastapi.testclient import TestClient
-
 from app.config import get_settings
 from app.deps import get_current_user_id, get_session
 from app.utils.auth import create_access_token
+from fastapi import Depends, FastAPI
+from fastapi.testclient import TestClient
 
 
 class DummySession:

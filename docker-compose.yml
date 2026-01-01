@@ -43,5 +43,21 @@ services:
       db:
         condition: service_healthy
 
+  frontend:
+    image: node:20
+    container_name: reservation_frontend
+    working_dir: /app/frontend
+    command: ["npm", "run", "dev"]
+    environment:
+      NEXT_PUBLIC_API_BASE: http://localhost:8000
+      NODE_ENV: development
+    volumes:
+      - .:/app
+    ports:
+      - "3001:3001"
+    depends_on:
+      backend:
+        condition: service_started
+
 volumes:
   db_data:

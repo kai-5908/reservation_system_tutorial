@@ -10,7 +10,7 @@ DB_PASS ?= app_password
 DB_NAME ?= reservation
 SEED_SQL ?= backend/migrations/seed_dev.sql
 
-.PHONY: db-up db-down db-logs db-ps db-cli db-migrate dev-up seed-dev
+.PHONY: db-up db-down db-logs db-ps db-cli db-migrate dev-up dev-all frontend-up frontend-logs seed-dev
 
 # Start MySQL in background
 db-up:
@@ -19,6 +19,17 @@ db-up:
 # Start backend dev environment (backend + db)
 dev-up:
 	$(DC) -f $(DC_FILE) up -d backend db
+
+# Start backend+db+frontend dev environment
+dev-all:
+	$(DC) -f $(DC_FILE) up -d backend db frontend
+
+# Start frontend only (expects backend/db already running)
+frontend-up:
+	$(DC) -f $(DC_FILE) up -d frontend
+
+frontend-logs:
+	$(DC) -f $(DC_FILE) logs -f frontend
 
 # Stop and remove MySQL container
 db-down:

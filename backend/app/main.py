@@ -1,12 +1,22 @@
 from typing import Awaitable, Callable
 
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import Response
 
 from .routers import reservations, slots
 from .utils.request_id import generate_request_id, set_request_id
 
 app = FastAPI(title="Reservation API")
+
+# CORS for local frontend (adjust origins as needed)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://localhost:3001"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/health")

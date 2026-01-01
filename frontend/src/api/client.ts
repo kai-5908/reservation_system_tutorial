@@ -112,13 +112,13 @@ export async function apiFetch<T>(
   ) {
     payload = JSON.stringify(payload);
   }
-  // fetch に渡す最終的な RequestInit
   // Content-Type は FormData/Blob などの場合は自動設定しない（ブラウザに任せる）
   const useJsonContentType = !(
     payload !== null &&
     (payload instanceof FormData || payload instanceof Blob || payload instanceof ArrayBuffer)
   );
 
+  // fetch に渡す最終的な RequestInit
   const init: RequestInit = {
     method,
     headers: buildHeaders(headers, useJsonContentType),

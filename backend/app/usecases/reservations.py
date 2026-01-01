@@ -122,8 +122,9 @@ async def list_user_reservations(
     res_repo: ReservationRepository,
     *,
     user_id: int,
+    status: ReservationStatus | None = None,
 ) -> list[tuple[Reservation, Slot]]:
-    return await res_repo.list_by_user(user_id)
+    return await res_repo.list_by_user(user_id, status=status)
 
 
 async def get_user_reservation(

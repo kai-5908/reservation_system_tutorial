@@ -54,7 +54,11 @@ class FakeResRepo:
     ) -> Reservation:
         return self.reservation
 
-    async def list_by_user(self, user_id: int) -> List[Tuple[Reservation, Slot]]:  # pragma: no cover
+    async def list_by_user(  # pragma: no cover
+        self,
+        user_id: int,
+        status: ReservationStatus | None = None,
+    ) -> List[Tuple[Reservation, Slot]]:
         return [(self.reservation, self.reservation.slot)]
 
     async def list_with_reserved(  # pragma: no cover - satisfy SlotRepository when used
@@ -174,7 +178,11 @@ class FakeRescheduleRepo:
     ) -> Reservation:
         return self.reservation
 
-    async def list_by_user(self, user_id: int) -> List[Tuple[Reservation, Slot]]:  # pragma: no cover
+    async def list_by_user(  # pragma: no cover
+        self,
+        user_id: int,
+        status: ReservationStatus | None = None,
+    ) -> List[Tuple[Reservation, Slot]]:
         return [(self.reservation, self.reservation.slot)]
 
     async def list_with_reserved(  # pragma: no cover - satisfy SlotRepository when used

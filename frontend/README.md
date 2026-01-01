@@ -1,21 +1,36 @@
-# フロントエンド概要
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-このプロジェクトは Create React App（React 18）で構成されています。状態管理や UI ライブラリは特に導入していないシンプルな構成です。
+## Getting Started
 
-## 開発コマンド
+First, run the development server:
 
-- 開発サーバー起動: `npm start` （http://localhost:3000）
-- テスト実行: `npm test`
-- 本番ビルド: `npm run build`
-- 依存インストール: `npm install`
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
 
-## 技術スタック
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-- React (CRA)
-- 状態管理: なし（必要に応じて React Hooks で実装）
-- UI ライブラリ: なし（必要に応じて後付け）
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-## 補足
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-- API コントラクト変更（空き枠レスポンスの `items` ラップ、予約一覧の `status` フィルタ）に追随する想定です。
-- 認証トークンは Bearer でヘッダ送信してください。
+## Learn More
+
+To learn more about Next.js, take a look at the following resources:
+
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

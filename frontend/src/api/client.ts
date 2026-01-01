@@ -137,7 +137,7 @@ export async function apiFetch<T>(
       return { data: null, error: { status: 401, message: "unauthorized" } };
     }
     // レスポンスボディをJSONとして読んでみる（読めない場合はnull）
-    let json: any = null;
+    let json: unknown = null;
     try {
       json = await res.json();
     } catch {
@@ -145,7 +145,10 @@ export async function apiFetch<T>(
     }
     // ステータスコードが 2xx 以外ならエラーとして返す
     if (!res.ok) {
-      const detail = json?.detail ?? res.statusText;
+      const detail =
+        typeof json === "object" && json !== null && "detail" in json
+          ? (json as { detail: unknown }).detail
+          : res.statusText;
       return { data: null, error: { status: res.status, message: String(detail) } };
     }
     // 正常時は JSON を data として返す。型チェックは呼び出し側で行う前提。

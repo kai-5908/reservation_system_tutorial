@@ -22,6 +22,18 @@ uv pip install -r requirements-dev.txt
 uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
+## 認証要件
+- すべての API は `Authorization: Bearer <token>` が必須です（空き枠検索 `/shops/{id}/slots/availability` も含む）。
+- トークンは HS256 署名のアクセストークンを前提としています。
+
+### 環境変数（認証）
+- `AUTH_SECRET`: 必須。Bearer トークン検証用のシークレット（HS256 想定）。未設定の場合は起動エラーになります。
+- `AUTH_ALGORITHM`: 署名アルゴリズム（デフォルト: `HS256`）
+
+## マイグレーション
+- MySQL にテーブルを作成する場合は `backend/migrations/` の SQL を適用してください（例: `mysql -u user -p -h db reservation < backend/migrations/0001_users.sql`）。
+- docs/design/migration-0001.sql にも全テーブル定義があります。
+
 ## テスト
 ```
 uv run pytest

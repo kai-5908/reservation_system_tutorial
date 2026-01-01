@@ -5,13 +5,13 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..deps import get_session
+from ..deps import get_current_user_id, get_session
 from ..infrastructure.repositories import SqlAlchemySlotRepository
 from ..schemas import SlotAvailability, SlotCreate, SlotRead
 from ..usecases import slots as slot_usecase
 from ..utils.time import to_utc_naive, utc_naive_to_jst
 
-router = APIRouter(prefix="/shops", tags=["slots"])
+router = APIRouter(prefix="/shops", tags=["slots"], dependencies=[Depends(get_current_user_id)])
 
 
 @router.get("/{shop_id}/slots/availability", response_model=List[SlotAvailability])

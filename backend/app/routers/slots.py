@@ -21,7 +21,7 @@ async def list_availability(
     end: datetime = Query(..., description="JST end datetime (ISO 8601)"),
     seat_id: Optional[int] = Query(default=None),
     session: AsyncSession = Depends(get_session),
-) -> list[SlotAvailability]:
+) -> SlotAvailabilityList:
     slot_repo = SqlAlchemySlotRepository(session)
     if start.tzinfo is None or end.tzinfo is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="start/end must have timezone")

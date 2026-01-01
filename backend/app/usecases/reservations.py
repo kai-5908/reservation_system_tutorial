@@ -68,7 +68,6 @@ async def cancel_reservation(
     reservation.status = ReservationStatus.CANCELLED
     reservation.version += 1
     reservation.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
-    setattr(reservation, "_previous_status", previous_status)  # type: ignore[attr-defined]
     updated = await res_repo.cancel(reservation)
     return updated, slot, updated.status
 
@@ -81,7 +80,7 @@ async def reschedule_reservation(
     user_id: int,
     new_slot_id: int,
     version: int,
-) -> tuple[Reservation, Slot]:
+) -> tuple[Reservation, Slot, int]:
     row = await res_repo.get_for_user_for_update(reservation_id, user_id)
     if row is None:
         raise SlotNotOpenError("reservation not found")
@@ -117,9 +116,8 @@ async def reschedule_reservation(
     reservation.slot = target_slot
     reservation.version += 1
     reservation.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
-    setattr(reservation, "_previous_slot_id", previous_slot_id)  # type: ignore[attr-defined]
     updated = await res_repo.reschedule(reservation)
-    return updated, target_slot
+    return updated, target_slot, previous_slot_id
 
 
 async def list_user_reservations(

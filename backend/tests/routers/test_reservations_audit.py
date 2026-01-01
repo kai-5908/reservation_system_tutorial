@@ -63,8 +63,8 @@ async def test_create_reservation_emits_audit(monkeypatch: pytest.MonkeyPatch) -
     def fake_emit(**kwargs: Any) -> None:
         calls.append(kwargs)
 
-    monkeypatch.setattr(router, "SqlAlchemySlotRepository", lambda s: s)  # type: ignore[assignment]
-    monkeypatch.setattr(router, "SqlAlchemyReservationRepository", lambda s: s)  # type: ignore[assignment]
+    monkeypatch.setattr(router, "SqlAlchemySlotRepository", lambda s: s)
+    monkeypatch.setattr(router, "SqlAlchemyReservationRepository", lambda s: s)
     monkeypatch.setattr(router.reservation_usecase, "create_reservation", fake_create_reservation)  # type: ignore[attr-defined]
     monkeypatch.setattr(router, "emit_audit_log", fake_emit)
 
@@ -93,7 +93,7 @@ async def test_cancel_reservation_log_failure_returns_500(monkeypatch: pytest.Mo
     def fake_emit(**kwargs: Any) -> None:
         raise RuntimeError("fail log")
 
-    monkeypatch.setattr(router, "SqlAlchemyReservationRepository", lambda s: s)  # type: ignore[assignment]
+    monkeypatch.setattr(router, "SqlAlchemyReservationRepository", lambda s: s)
     monkeypatch.setattr(router.reservation_usecase, "cancel_reservation", fake_cancel)  # type: ignore[attr-defined]
     monkeypatch.setattr(router, "emit_audit_log", fake_emit)
 
@@ -116,18 +116,17 @@ async def test_reschedule_sets_previous_slot_and_emits(monkeypatch: pytest.Monke
     to_slot = _slot(2)
     reservation = _reservation(slot_id=from_slot.id)
 
-    async def fake_reschedule(*args: object, **kwargs: object) -> tuple[Reservation, Slot]:
-        setattr(reservation, "_previous_slot_id", from_slot.id)  # mimic usecase behavior
+    async def fake_reschedule(*args: object, **kwargs: object) -> tuple[Reservation, Slot, int]:
         reservation.slot_id = to_slot.id
-        return reservation, to_slot
+        return reservation, to_slot, from_slot.id
 
     calls: list[dict[str, Any]] = []
 
     def fake_emit(**kwargs: Any) -> None:
         calls.append(kwargs)
 
-    monkeypatch.setattr(router, "SqlAlchemySlotRepository", lambda s: s)  # type: ignore[assignment]
-    monkeypatch.setattr(router, "SqlAlchemyReservationRepository", lambda s: s)  # type: ignore[assignment]
+    monkeypatch.setattr(router, "SqlAlchemySlotRepository", lambda s: s)
+    monkeypatch.setattr(router, "SqlAlchemyReservationRepository", lambda s: s)
     monkeypatch.setattr(router.reservation_usecase, "reschedule_reservation", fake_reschedule)  # type: ignore[attr-defined]
     monkeypatch.setattr(router, "emit_audit_log", fake_emit)
 

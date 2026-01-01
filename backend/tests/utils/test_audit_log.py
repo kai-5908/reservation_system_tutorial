@@ -7,7 +7,7 @@ from app.utils import audit_log
 from app.utils.request_id import set_request_id
 
 
-def test_emit_audit_log_outputs_json(monkeypatch) -> None:
+def test_emit_audit_log_outputs_json(monkeypatch: pytest.MonkeyPatch) -> None:
     messages: List[str] = []
 
     class DummyLogger:
@@ -39,7 +39,7 @@ def test_emit_audit_log_outputs_json(monkeypatch) -> None:
     assert "timestamp" in payload
 
 
-def test_emit_audit_log_raises_on_logger_failure(monkeypatch) -> None:
+def test_emit_audit_log_raises_on_logger_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     class DummyLogger:
         def info(self, _: Any) -> None:
             raise ValueError("fail")

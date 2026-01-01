@@ -152,7 +152,7 @@ async def reschedule_reservation(
     res_repo = SqlAlchemyReservationRepository(session)
     async with session.begin():
         try:
-            updated, slot = await reservation_usecase.reschedule_reservation(
+            updated, slot, previous_slot_id = await reservation_usecase.reschedule_reservation(
                 slot_repo,
                 res_repo,
                 reservation_id=reservation_id,
@@ -160,7 +160,6 @@ async def reschedule_reservation(
                 new_slot_id=payload.slot_id,
                 version=version,
             )
-            previous_slot_id = getattr(updated, "_previous_slot_id", None)
             try:
                 emit_audit_log(
                     action="reservation.rescheduled",

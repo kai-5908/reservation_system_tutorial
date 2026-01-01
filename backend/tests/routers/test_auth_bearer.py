@@ -22,6 +22,9 @@ class DummySession:
     async def scalar(self, *args: Any, **kwargs: Any) -> int | None:
         return 1 if self.user_exists else None
 
+    async def rollback(self) -> None:
+        return None
+
 
 def _make_app(user_exists: bool) -> TestClient:
     app = FastAPI()

@@ -57,7 +57,7 @@ export default function Home() {
         `/shops/${shopId}/slots/availability?${params.toString()}`
       );
       if (res.error) {
-        setMessage(res.error.detail ?? "検索でエラーが発生しました");
+        setMessage(res.error.message ?? "検索でエラーが発生しました");
         return;
       }
       setResults(res.data?.items ?? []);

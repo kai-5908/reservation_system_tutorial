@@ -1,6 +1,6 @@
 from typing import List
 
-from fastapi import APIRouter, Body, Depends, Header, HTTPException, Path, status
+from fastapi import APIRouter, Body, Depends, Header, HTTPException, Path, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..deps import get_current_user_id, get_session
@@ -13,6 +13,7 @@ from ..domain.errors import (
     VersionConflictError,
 )
 from ..infrastructure.repositories import SqlAlchemyReservationRepository, SqlAlchemySlotRepository
+from ..models import ReservationStatus
 from ..schemas import ReservationCancel, ReservationCreate, ReservationRead, ReservationReschedule
 from ..usecases import reservations as reservation_usecase
 
@@ -50,9 +51,14 @@ async def create_reservation(
 async def list_my_reservations(
     session: AsyncSession = Depends(get_session),
     user_id: int = Depends(get_current_user_id),
+    status_filter: ReservationStatus | None = Query(default=None, alias="status"),
 ) -> list[ReservationRead]:
     res_repo = SqlAlchemyReservationRepository(session)
-    rows = await reservation_usecase.list_user_reservations(res_repo, user_id=user_id)
+    rows = await reservation_usecase.list_user_reservations(
+        res_repo,
+        user_id=user_id,
+        status=status_filter,
+    )
     return [ReservationRead.from_db(reservation=res, slot=slot, shop_id=slot.shop_id) for res, slot in rows]
 
 

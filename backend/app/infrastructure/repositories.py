@@ -123,13 +123,19 @@ class SqlAlchemyReservationRepository(ReservationRepository):
         await self.session.flush()
         return reservation
 
-    async def list_by_user(self, user_id: int) -> List[Tuple[Reservation, Slot]]:
+    async def list_by_user(
+        self,
+        user_id: int,
+        status: ReservationStatus | None = None,
+    ) -> List[Tuple[Reservation, Slot]]:
         stmt: Select[Tuple[Reservation, Slot]] = (
             select(Reservation, Slot)
             .join(Slot, Reservation.slot_id == Slot.id)
             .options(joinedload(Reservation.slot))
             .where(Reservation.user_id == user_id)
         )
+        if status is not None:
+            stmt = stmt.where(Reservation.status == status)
         rows = await self.session.execute(stmt)
         return cast(List[Tuple[Reservation, Slot]], list(rows.all()))
 

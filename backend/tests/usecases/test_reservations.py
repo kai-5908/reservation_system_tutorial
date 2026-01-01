@@ -212,7 +212,8 @@ async def test_cancel_updates_when_booked() -> None:
     reservation = cast(Reservation, reservation_struct)
     repo = FakeResRepo(reservation)
     updated, _, status_value = await uc.cancel_reservation(repo, reservation_id=1, user_id=1, version=1)
-    assert status_value == ReservationStatus.CANCELLED
+    assert updated.status == ReservationStatus.CANCELLED
+    assert status_value == ReservationStatus.BOOKED
     assert repo.cancel_called is True
 
 

@@ -121,7 +121,7 @@ async def cancel_reservation(
                     shop_id=slot.shop_id,
                     user_id=user_id,
                     party_size=updated.party_size,
-                    status_from=getattr(updated, "_previous_status", previous_status),
+                    status_from=previous_status,
                     status_to=updated.status,
                     version=updated.version,
                 )

@@ -69,7 +69,7 @@ async def cancel_reservation(
     reservation.version += 1
     reservation.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
     updated = await res_repo.cancel(reservation)
-    return updated, slot, updated.status
+    return updated, slot, previous_status
 
 
 async def reschedule_reservation(

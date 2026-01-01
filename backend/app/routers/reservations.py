@@ -16,6 +16,7 @@ from ..infrastructure.repositories import SqlAlchemyReservationRepository, SqlAl
 from ..models import ReservationStatus
 from ..schemas import ReservationCancel, ReservationCreate, ReservationRead, ReservationReschedule
 from ..usecases import reservations as reservation_usecase
+from ..utils.audit_log import emit_audit_log
 
 router = APIRouter(prefix="", tags=["reservations"])
 
@@ -37,6 +38,21 @@ async def create_reservation(
                 user_id=user_id,
                 party_size=payload.party_size,
             )
+            try:
+                emit_audit_log(
+                    action="reservation.created",
+                    initiator="user",
+                    reservation_id=reservation.id,
+                    slot_id=slot.id,
+                    shop_id=slot.shop_id,
+                    user_id=user_id,
+                    party_size=reservation.party_size,
+                    status_from=None,
+                    status_to=reservation.status,
+                    version=reservation.version,
+                )
+            except RuntimeError as exc:
+                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="audit log failed") from exc
         except SlotNotOpenError:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="slot not available")
         except DuplicateReservationError:
@@ -88,12 +104,27 @@ async def cancel_reservation(
     res_repo = SqlAlchemyReservationRepository(session)
     async with session.begin():
         try:
-            updated, slot, status_value = await reservation_usecase.cancel_reservation(
+            updated, slot, previous_status = await reservation_usecase.cancel_reservation(
                 res_repo,
                 reservation_id=reservation_id,
                 user_id=user_id,
                 version=version,
             )
+            try:
+                emit_audit_log(
+                    action="reservation.cancelled",
+                    initiator="user",
+                    reservation_id=updated.id,
+                    slot_id=slot.id,
+                    shop_id=slot.shop_id,
+                    user_id=user_id,
+                    party_size=updated.party_size,
+                    status_from=getattr(updated, "_previous_status", previous_status),
+                    status_to=updated.status,
+                    version=updated.version,
+                )
+            except RuntimeError as exc:
+                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="audit log failed") from exc
         except SlotNotOpenError:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="reservation not found")
         except VersionConflictError:
@@ -125,6 +156,23 @@ async def reschedule_reservation(
                 new_slot_id=payload.slot_id,
                 version=version,
             )
+            previous_slot_id = getattr(updated, "_previous_slot_id", None)
+            try:
+                emit_audit_log(
+                    action="reservation.rescheduled",
+                    initiator="user",
+                    reservation_id=updated.id,
+                    slot_id=slot.id,
+                    shop_id=slot.shop_id,
+                    user_id=user_id,
+                    party_size=updated.party_size,
+                    status_from=ReservationStatus.BOOKED,
+                    status_to=updated.status,
+                    version=updated.version,
+                    extra={"slot_id_from": previous_slot_id},
+                )
+            except RuntimeError as exc:
+                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="audit log failed") from exc
         except SlotNotOpenError:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="slot not available")
         except VersionConflictError:

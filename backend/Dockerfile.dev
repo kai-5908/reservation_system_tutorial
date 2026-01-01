@@ -15,9 +15,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certifi
 # Install uv (default path: /root/.local/bin)
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 
-COPY backend/requirements-dev.txt backend/requirements.txt ./
+# Copy project files (pyproject/lock + sources needed for editable install)
+COPY backend /app/backend
 
 RUN /root/.local/bin/uv venv /opt/venv && \
-    /root/.local/bin/uv pip install -r requirements-dev.txt
+    /root/.local/bin/uv sync --frozen --dev
 
 CMD ["sleep", "infinity"]

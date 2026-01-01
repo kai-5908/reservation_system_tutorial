@@ -67,6 +67,8 @@ async def get_current_user_id(
             detail="User not found",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    # Reset transaction state so downstream handlers can begin their own transactions cleanly.
+    await session.rollback()
     return int(user_id)
 
 

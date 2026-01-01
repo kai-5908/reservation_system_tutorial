@@ -54,9 +54,10 @@ async def cancel_reservation(
     if row is None:
         raise SlotNotOpenError("reservation not found")
     reservation, slot = row
+    previous_status = reservation.status
     # Idempotent: already cancelled returns as-is
     if reservation.status == ReservationStatus.CANCELLED:
-        return reservation, slot, reservation.status
+        return reservation, slot, previous_status
     # Version check after idempotent guard
     if reservation.version != version:
         raise VersionConflictError("version mismatch")
@@ -67,6 +68,7 @@ async def cancel_reservation(
     reservation.status = ReservationStatus.CANCELLED
     reservation.version += 1
     reservation.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
+    setattr(reservation, "_previous_status", previous_status)  # type: ignore[attr-defined]
     updated = await res_repo.cancel(reservation)
     return updated, slot, updated.status
 
@@ -92,7 +94,7 @@ async def reschedule_reservation(
         raise RescheduleNotAllowedError("reschedule window closed")
     if reservation.slot_id == new_slot_id:
         # Idempotent: already on the requested slot
-        return reservation, current_slot
+        return reservation, current_slot, reservation.slot_id
 
     target_slot = await slot_repo.get_for_update(new_slot_id)
     if target_slot is None or target_slot.status != SlotStatus.OPEN:
@@ -110,10 +112,12 @@ async def reschedule_reservation(
     )
     validate_reservation(snapshot, party_size=reservation.party_size)
 
+    previous_slot_id = reservation.slot_id
     reservation.slot_id = target_slot.id
     reservation.slot = target_slot
     reservation.version += 1
     reservation.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
+    setattr(reservation, "_previous_slot_id", previous_slot_id)  # type: ignore[attr-defined]
     updated = await res_repo.reschedule(reservation)
     return updated, target_slot
 

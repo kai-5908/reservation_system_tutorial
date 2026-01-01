@@ -1,0 +1,396 @@
+openapi: 3.0.3
+info:
+  title: Reservation API
+  version: 1.0.0
+servers:
+  - url: http://localhost:8000
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+  /shops/{shop_id}/slots/availability:
+    get:
+      summary: List slot availability
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: shop_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+        - name: start
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+          description: JST start datetime (ISO 8601, timezone required)
+        - name: end
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+          description: JST end datetime (ISO 8601, timezone required)
+        - name: seat_id
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Availability list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SlotAvailabilityList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /shops/{shop_id}/slots:
+    post:
+      summary: Create slot
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: shop_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SlotCreate"
+      responses:
+        "201":
+          description: Slot created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SlotRead"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          description: Conflict (duplicate slot)
+  /reservations:
+    post:
+      summary: Create reservation
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReservationCreate"
+      responses:
+        "201":
+          description: Reservation created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReservationRead"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Slot not available
+        "409":
+          description: Capacity exceeded or duplicate reservation
+  /me/reservations:
+    get:
+      summary: List my reservations
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/ReservationStatus"
+      responses:
+        "200":
+          description: List of reservations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReservationRead"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /me/reservations/{reservation_id}:
+    get:
+      summary: Get my reservation detail
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: reservation_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: Reservation detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReservationRead"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Not found
+  /me/reservations/{reservation_id}/cancel:
+    post:
+      summary: Cancel reservation
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: reservation_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+        - name: If-Match
+          in: header
+          required: false
+          schema:
+            type: string
+          description: Version for optimistic lock (preferred)
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReservationCancel"
+      responses:
+        "200":
+          description: Cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReservationRead"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Cancellation not allowed within cutoff
+        "404":
+          description: Not found
+        "409":
+          description: Version conflict
+  /me/reservations/{reservation_id}/reschedule:
+    post:
+      summary: Reschedule reservation
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: reservation_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+        - name: If-Match
+          in: header
+          required: false
+          schema:
+            type: string
+          description: Version for optimistic lock (preferred)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReservationReschedule"
+      responses:
+        "200":
+          description: Rescheduled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReservationRead"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Reschedule not allowed (cutoff or policy)
+        "404":
+          description: Slot/reservation not found
+        "409":
+          description: Version conflict / capacity exceeded / duplicate
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    BadRequest:
+      description: Bad request
+    Unauthorized:
+      description: Unauthorized
+  schemas:
+    SlotStatus:
+      type: string
+      enum: [open, closed, blocked]
+    ReservationStatus:
+      type: string
+      enum: [request_pending, booked, cancelled]
+    SlotAvailabilityItem:
+      type: object
+      properties:
+        slot_id:
+          type: integer
+        shop_id:
+          type: integer
+        seat_id:
+          type: integer
+          nullable: true
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        capacity:
+          type: integer
+        status:
+          $ref: "#/components/schemas/SlotStatus"
+        remaining:
+          type: integer
+      required: [slot_id, shop_id, starts_at, ends_at, capacity, status, remaining]
+    SlotAvailabilityList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SlotAvailabilityItem"
+      required: [items]
+    SlotCreate:
+      type: object
+      properties:
+        seat_id:
+          type: integer
+          nullable: true
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        capacity:
+          type: integer
+          minimum: 1
+        status:
+          $ref: "#/components/schemas/SlotStatus"
+      required: [starts_at, ends_at, capacity]
+    SlotRead:
+      type: object
+      properties:
+        slot_id:
+          type: integer
+        shop_id:
+          type: integer
+        seat_id:
+          type: integer
+          nullable: true
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        capacity:
+          type: integer
+        status:
+          $ref: "#/components/schemas/SlotStatus"
+      required: [slot_id, shop_id, starts_at, ends_at, capacity, status]
+    ReservationCreate:
+      type: object
+      properties:
+        slot_id:
+          type: integer
+        party_size:
+          type: integer
+          minimum: 1
+      required: [slot_id, party_size]
+    ReservationCancel:
+      type: object
+      properties:
+        version:
+          type: integer
+          minimum: 1
+          nullable: true
+    ReservationReschedule:
+      type: object
+      properties:
+        slot_id:
+          type: integer
+        version:
+          type: integer
+          minimum: 1
+          nullable: true
+      required: [slot_id]
+    ReservationRead:
+      type: object
+      properties:
+        reservation_id:
+          type: integer
+        slot_id:
+          type: integer
+        user_id:
+          type: integer
+        party_size:
+          type: integer
+        status:
+          $ref: "#/components/schemas/ReservationStatus"
+        version:
+          type: integer
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        seat_id:
+          type: integer
+          nullable: true
+        shop_id:
+          type: integer
+          nullable: true
+      required:
+        - reservation_id
+        - slot_id
+        - user_id
+        - party_size
+        - status
+        - version
+        - starts_at
+        - ends_at

@@ -21,6 +21,12 @@
 /build
 
 # misc
+.next/
+.turbo/
+.vercel/
+.eslintcache
+.stylelintcache
+tsconfig.tsbuildinfo
 .DS_Store
 *.pem
 

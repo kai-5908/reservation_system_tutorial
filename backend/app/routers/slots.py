@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import List, Optional
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.exc import IntegrityError
@@ -7,14 +7,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..deps import get_current_user_id, get_session
 from ..infrastructure.repositories import SqlAlchemySlotRepository
-from ..schemas import SlotAvailability, SlotCreate, SlotRead
+from ..schemas import SlotAvailability, SlotAvailabilityList, SlotCreate, SlotRead
 from ..usecases import slots as slot_usecase
 from ..utils.time import to_utc_naive, utc_naive_to_jst
 
 router = APIRouter(prefix="/shops", tags=["slots"], dependencies=[Depends(get_current_user_id)])
 
 
-@router.get("/{shop_id}/slots/availability", response_model=List[SlotAvailability])
+@router.get("/{shop_id}/slots/availability", response_model=SlotAvailabilityList)
 async def list_availability(
     shop_id: int,
     start: datetime = Query(..., description="JST start datetime (ISO 8601)"),
@@ -34,19 +34,21 @@ async def list_availability(
         end=utc_end,
         seat_id=seat_id,
     )
-    return [
-        SlotAvailability(
-            slot_id=entry["slot"].id,
-            shop_id=entry["slot"].shop_id,
-            seat_id=entry["slot"].seat_id,
-            starts_at=utc_naive_to_jst(entry["slot"].starts_at),
-            ends_at=utc_naive_to_jst(entry["slot"].ends_at),
-            capacity=entry["slot"].capacity,
-            status=entry["slot"].status,
-            remaining=entry["remaining"],
-        )
-        for entry in rows
-    ]
+    return SlotAvailabilityList(
+        items=[
+            SlotAvailability(
+                slot_id=entry["slot"].id,
+                shop_id=entry["slot"].shop_id,
+                seat_id=entry["slot"].seat_id,
+                starts_at=utc_naive_to_jst(entry["slot"].starts_at),
+                ends_at=utc_naive_to_jst(entry["slot"].ends_at),
+                capacity=entry["slot"].capacity,
+                status=entry["slot"].status,
+                remaining=entry["remaining"],
+            )
+            for entry in rows
+        ]
+    )
 
 
 @router.post("/{shop_id}/slots", response_model=SlotRead, status_code=status.HTTP_201_CREATED)

@@ -22,6 +22,10 @@ class SlotAvailability(BaseModel):
         return dt.astimezone(JST).isoformat()
 
 
+class SlotAvailabilityList(BaseModel):
+    items: list[SlotAvailability]
+
+
 class SlotCreate(BaseModel):
     seat_id: Optional[int] = None
     starts_at: datetime

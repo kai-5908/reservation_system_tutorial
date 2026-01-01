@@ -29,8 +29,9 @@ test("jsonBody is stringified and sent with Authorization and X-Request-ID", asy
 
   expect(mockFetch).toHaveBeenCalledTimes(1);
   const [, init] = mockFetch.mock.calls[0];
-  expect((init?.headers as any)["Authorization"]).toBe("Bearer testtoken");
-  expect((init?.headers as any)["X-Request-ID"]).toBeDefined();
+  const headers = init?.headers as Headers;
+  expect(headers.get("Authorization")).toBe("Bearer testtoken");
+  expect(headers.get("X-Request-ID")).toBeTruthy();
   expect(init?.body).toBe(JSON.stringify({ foo: "bar" }));
 });
 
@@ -44,6 +45,21 @@ test("plain object body is stringified", async () => {
   await apiFetch("/plain", { method: "POST", body: { a: 1 } as any });
   const [, init] = mockFetch.mock.calls[0];
   expect(init?.body).toBe(JSON.stringify({ a: 1 }));
+});
+
+test("FormData body does not set JSON content-type", async () => {
+  const mockFetch = jest.fn().mockResolvedValue({
+    ok: true,
+    status: 200,
+    json: async () => ({}),
+  });
+  global.fetch = mockFetch as any;
+  const fd = new FormData();
+  fd.append("file", new Blob(["test"], { type: "text/plain" }), "test.txt");
+  await apiFetch("/upload", { method: "POST", body: fd });
+  const [, init] = mockFetch.mock.calls[0];
+  const headers = init?.headers as any;
+  expect(headers["Content-Type"]).toBeUndefined();
 });
 
 test("401 triggers redirect to /login", async () => {

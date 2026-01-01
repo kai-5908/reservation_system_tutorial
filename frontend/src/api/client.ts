@@ -59,21 +59,25 @@ export function setToken(token: string | null): void {
   }
 }
 
-// リクエストヘッダを組み立てる
-function buildHeaders(extra?: HeadersInit): HeadersInit {
-  // デフォルトは JSON API として扱う。呼び出し側で上書き可能。
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-    ...extra,
-  };
+// HeadersInit を安全にマージして Headers を返す（Headers インスタンスも展開する）
+function buildHeaders(extra?: HeadersInit, useJsonContentType: boolean = true): Headers {
+  const headers = new Headers();
+  if (useJsonContentType) {
+    headers.set("Content-Type", "application/json");
+  }
+  // 呼び出し側のヘッダを上書き優先で取り込む
+  if (extra) {
+    const tmp = new Headers(extra);
+    tmp.forEach((value, key) => headers.set(key, value));
+  }
   // ローカルストレージからBearerを注入（なければ何もしない）。
   const token = getToken();
-  if (token) {
-    (headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
+  if (token && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${token}`);
   }
   // 相関用の Request-ID を自動付与（既に指定されていれば触らない）。
-  if (!("X-Request-ID" in (headers as Record<string, unknown>))) {
-    (headers as Record<string, string>)["X-Request-ID"] = generateRequestId();
+  if (!headers.has("X-Request-ID")) {
+    headers.set("X-Request-ID", generateRequestId());
   }
   return headers;
 }
@@ -109,9 +113,15 @@ export async function apiFetch<T>(
     payload = JSON.stringify(payload);
   }
   // fetch に渡す最終的な RequestInit
+  // Content-Type は FormData/Blob などの場合は自動設定しない（ブラウザに任せる）
+  const useJsonContentType = !(
+    payload !== null &&
+    (payload instanceof FormData || payload instanceof Blob || payload instanceof ArrayBuffer)
+  );
+
   const init: RequestInit = {
     method,
-    headers: buildHeaders(headers),
+    headers: buildHeaders(headers, useJsonContentType),
     body: payload,
     ...rest,
   };

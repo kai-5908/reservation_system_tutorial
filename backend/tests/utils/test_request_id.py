@@ -1,9 +1,8 @@
+import pytest
 from app.main import request_id_middleware
 from app.utils.request_id import generate_request_id, get_request_id, set_request_id
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse
-from httpx import AsyncClient, ASGITransport
-import pytest
+from httpx import ASGITransport, AsyncClient
 
 
 def test_request_id_set_and_get() -> None:

@@ -1,4 +1,5 @@
-from typing import Any, Tuple, cast
+from datetime import datetime, timedelta, timezone
+from typing import Any, cast
 
 import pytest
 from app.models import Reservation, ReservationStatus, Slot, SlotStatus
@@ -6,7 +7,6 @@ from app.routers import reservations as router
 from app.schemas import ReservationCancel, ReservationCreate, ReservationRead, ReservationReschedule
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from datetime import datetime, timedelta, timezone
 
 
 class DummySession:

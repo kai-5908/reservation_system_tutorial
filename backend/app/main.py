@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request
 
-from .utils.request_id import generate_request_id, set_request_id
 from .routers import reservations, slots
+from .utils.request_id import generate_request_id, set_request_id
 
 app = FastAPI(title="Reservation API")
 

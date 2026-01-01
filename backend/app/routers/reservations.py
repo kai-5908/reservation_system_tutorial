@@ -52,7 +52,9 @@ async def create_reservation(
                     version=reservation.version,
                 )
             except RuntimeError as exc:
-                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="audit log failed") from exc
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="audit log failed"
+                ) from exc
         except SlotNotOpenError:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="slot not available")
         except DuplicateReservationError:
@@ -124,7 +126,9 @@ async def cancel_reservation(
                     version=updated.version,
                 )
             except RuntimeError as exc:
-                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="audit log failed") from exc
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="audit log failed"
+                ) from exc
         except SlotNotOpenError:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="reservation not found")
         except VersionConflictError:
@@ -172,7 +176,9 @@ async def reschedule_reservation(
                     extra={"slot_id_from": previous_slot_id},
                 )
             except RuntimeError as exc:
-                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="audit log failed") from exc
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="audit log failed"
+                ) from exc
         except SlotNotOpenError:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="slot not available")
         except VersionConflictError:

@@ -8,8 +8,9 @@ DB_PORT ?= 3306
 DB_USER ?= app
 DB_PASS ?= app_password
 DB_NAME ?= reservation
+SEED_SQL ?= backend/migrations/seed_dev.sql
 
-.PHONY: db-up db-down db-logs db-ps db-cli db-migrate dev-up
+.PHONY: db-up db-down db-logs db-ps db-cli db-migrate dev-up seed-dev
 
 # Start MySQL in background
 db-up:
@@ -39,3 +40,8 @@ db-cli:
 db-migrate:
 	test -f "$(MIGRATION_SQL)" || (echo "missing migration file: $(MIGRATION_SQL)" && exit 1)
 	cat $(MIGRATION_SQL) | $(DC) -f $(DC_FILE) exec -T db mysql -u$(DB_USER) -p$(DB_PASS) $(DB_NAME)
+
+# Apply development seed data (idempotent)
+seed-dev:
+	test -f "$(SEED_SQL)" || (echo "missing seed file: $(SEED_SQL)" && exit 1)
+	cat $(SEED_SQL) | $(DC) -f $(DC_FILE) exec -T db mysql -u$(DB_USER) -p$(DB_PASS) $(DB_NAME)

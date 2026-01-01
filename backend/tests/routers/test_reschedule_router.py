@@ -80,7 +80,7 @@ async def test_reschedule_router_returns_200_and_uses_if_match(monkeypatch: pyte
         user_id: int,
         new_slot_id: int,
         version: int,
-    ) -> Tuple[Reservation, Slot]:
+    ) -> Tuple[Reservation, Slot, int]:
         assert isinstance(slot_repo, DummySlotRepo)
         assert isinstance(res_repo, DummyReservationRepo)
         assert reservation_id == reservation.id
@@ -89,7 +89,7 @@ async def test_reschedule_router_returns_200_and_uses_if_match(monkeypatch: pyte
         assert version == 10  # If-Match優先で抽出されることを確認
         reservation.slot_id = target_slot.id
         reservation.version = version + 1
-        return reservation, target_slot
+        return reservation, target_slot, current_slot.id
 
     monkeypatch.setattr(router, "SqlAlchemySlotRepository", DummySlotRepo)
     monkeypatch.setattr(router, "SqlAlchemyReservationRepository", DummyReservationRepo)

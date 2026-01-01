@@ -212,7 +212,8 @@ async def test_cancel_updates_when_booked() -> None:
     reservation = cast(Reservation, reservation_struct)
     repo = FakeResRepo(reservation)
     updated, _, status_value = await uc.cancel_reservation(repo, reservation_id=1, user_id=1, version=1)
-    assert status_value == ReservationStatus.CANCELLED
+    assert updated.status == ReservationStatus.CANCELLED
+    assert status_value == ReservationStatus.BOOKED
     assert repo.cancel_called is True
 
 
@@ -279,7 +280,7 @@ async def test_reschedule_moves_to_target_slot_and_increments_version() -> None:
     repo = FakeRescheduleRepo(reservation, reserved_by_slot={2: 1})
     slot_repo = FakeSlotRepo({1: current_slot, 2: target_slot})
 
-    updated, slot = await uc.reschedule_reservation(
+    updated, slot, previous_slot_id = await uc.reschedule_reservation(
         slot_repo,
         repo,
         reservation_id=1,
@@ -291,6 +292,7 @@ async def test_reschedule_moves_to_target_slot_and_increments_version() -> None:
     assert slot.id == 2
     assert updated.slot_id == 2
     assert updated.version == 2
+    assert previous_slot_id == 1
     assert repo.reschedule_called is True
 
 

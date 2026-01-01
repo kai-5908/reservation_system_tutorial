@@ -24,6 +24,9 @@ class DummySession:
             raise self.user_exists
         return 1 if self.user_exists else None
 
+    async def rollback(self) -> None:
+        return None
+
 
 @pytest.fixture(autouse=True)
 def _set_auth_secret(monkeypatch: pytest.MonkeyPatch) -> None:

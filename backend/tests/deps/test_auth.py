@@ -77,7 +77,7 @@ async def test_get_current_user_id_rejects_when_user_missing() -> None:
 async def test_get_current_user_id_handles_missing_users_table() -> None:
     settings = Settings(auth_secret="testsecret")
     token = create_access_token(user_id=1, secret=settings.auth_secret, algorithm=settings.auth_algorithm)
-    session = DummySession(user_exists=ProgrammingError("missing", None, None))
+    session = DummySession(user_exists=ProgrammingError("missing", None, Exception("cause")))
     with pytest.raises(HTTPException) as excinfo:
         await get_current_user_id(authorization=f"Bearer {token}", session=session)  # type: ignore[arg-type]
     assert excinfo.value.status_code == 500
